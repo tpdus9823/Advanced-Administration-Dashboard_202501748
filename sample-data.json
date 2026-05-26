@@ -1,0 +1,281 @@
+{
+  "meta": {
+    "project": "AdminFlow",
+    "title": "행정업무 종합 대시보드",
+    "version": "2.0",
+    "period": "2026년 상반기",
+    "department": "총무팀",
+    "lastUpdated": "2026-05-26"
+  },
+
+  "users": [
+    { "id": "member", "name": "정세연", "email": "jeong.seyeon@company.kr", "role": "member", "avatar": "정", "department": "총무팀", "annualLeaveTotal": 25, "annualLeaveUsed": 14 },
+    { "id": "leader", "name": "김철수", "email": "kim@company.kr",          "role": "leader", "avatar": "김", "department": "총무팀", "annualLeaveTotal": 25, "annualLeaveUsed": 10 },
+    { "id": "admin",  "name": "최지수", "email": "choi@company.kr",          "role": "admin",  "avatar": "최", "department": "시스템", "annualLeaveTotal": 25, "annualLeaveUsed": 8  }
+  ],
+
+  "kpi": {
+    "activeTasks":    8,
+    "pendingApproval": 3,
+    "urgentDue":      2,
+    "weeklyDone":     5,
+    "annualLeaveLeft": 11,
+    "annualLeaveTotal": 25,
+    "budgetUsedRate": 68,
+    "budgetUsedAmount": 3300000,
+    "unreadChat":     4
+  },
+
+  "ticker": [
+    { "level": "긴급", "color": "#ef4444", "text": "[긴급] 5/28 본부장 결재 자료 오전 9시 제출" },
+    { "level": "안내", "color": "#fbbf24", "text": "[안내] 6월 정기 시설 점검 6/3~4 예정" },
+    { "level": "공지", "color": "#3b82f6", "text": "[공지] 상반기 인사평가 6/1~15 시행" },
+    { "level": "행사", "color": "#22c55e", "text": "[행사] 창립기념일 6/10 오후 3시" }
+  ],
+
+  "todos": [
+    { "id": 1, "text": "Q2 경영실적 보고서 최종 결재 상신", "priority": "d1", "done": false, "assign": "정세연" },
+    { "id": 2, "text": "5/28 임원회의실 예약 및 자료 배포",  "priority": "d2", "done": false, "assign": "김철수" },
+    { "id": 3, "text": "사무용품 계정 점검 및 발주",          "priority": "d5", "done": false, "assign": "이영희" },
+    { "id": 4, "text": "인사평가 일정 공지 발송",             "priority": "d5", "done": true,  "assign": "정세연" },
+    { "id": 5, "text": "6월 시설 점검 일정 조율",             "priority": "d5", "done": false, "assign": "박민준" }
+  ],
+
+  "milestones": [
+    { "id": 1, "name": "상반기 결산 보고",   "progress": 75, "color": "#3b82f6", "dueDate": "2026-06-15" },
+    { "id": 2, "name": "사무실 리모델링 TF", "progress": 40, "color": "#a855f7", "dueDate": "2026-07-31" },
+    { "id": 3, "name": "HR 시스템 전환",     "progress": 20, "color": "#f97316", "dueDate": "2026-09-30" }
+  ],
+
+  "trackers": [
+    { "id": 1, "name": "법인카드 정산 신청서",  "status": "bpa", "date": "5/24" },
+    { "id": 2, "name": "Q2 실적보고서 V3",      "status": "bac", "date": "5/25" },
+    { "id": 3, "name": "외부 강사료 지급품의",  "status": "bdo", "date": "5/20" },
+    { "id": 4, "name": "사무용품 구매 품의",    "status": "bre", "date": "5/23" },
+    { "id": 5, "name": "5월 법인카드 영수증",   "status": "bpa", "date": "5/26" }
+  ],
+
+  "approvals": [
+    {
+      "docName": "법인카드 정산 신청서",
+      "steps": [
+        { "label": "담당", "status": "done" },
+        { "label": "팀장", "status": "done" },
+        { "label": "부장", "status": "cur"  },
+        { "label": "본부장","status": "wait" },
+        { "label": "대표", "status": "wait" }
+      ]
+    },
+    {
+      "docName": "Q2 실적보고서 V3",
+      "steps": [
+        { "label": "담당", "status": "done" },
+        { "label": "팀장", "status": "cur"  },
+        { "label": "본부장","status": "wait" },
+        { "label": "대표", "status": "wait" }
+      ]
+    },
+    {
+      "docName": "외부 강사료 지급품의",
+      "steps": [
+        { "label": "담당", "status": "done" },
+        { "label": "팀장", "status": "done" },
+        { "label": "부장", "status": "done" },
+        { "label": "본부장","status": "cur"  },
+        { "label": "대표", "status": "wait" }
+      ]
+    },
+    {
+      "docName": "사무용품 구매 품의",
+      "steps": [
+        { "label": "담당", "status": "done" },
+        { "label": "팀장", "status": "rej"  }
+      ]
+    }
+  ],
+
+  "budget": {
+    "year": 2026,
+    "month": 5,
+    "totalBudget": 4800000,
+    "usedBudget":  3300000,
+    "usedRate": 68,
+    "categories": [
+      { "name": "소모품", "amount": 2100000, "color": "#3b82f6" },
+      { "name": "교육비", "amount":  800000, "color": "#22c55e" },
+      { "name": "회식비", "amount":  400000, "color": "#fbbf24" },
+      { "name": "잔여",   "amount": 1500000, "color": "#334155" }
+    ]
+  },
+
+  "alerts": [
+    { "id": 1, "message": "📋 법인카드 정산 신청서 — 부장 검토 중", "time": "10분 전",  "color": "#fbbf24", "read": false },
+    { "id": 2, "message": "🔴 Q2 보고서 마감 D-1 임박!",            "time": "1시간 전", "color": "#ef4444", "read": false },
+    { "id": 3, "message": "✅ 사무용품 구매 품의 완결 처리",          "time": "2시간 전", "color": "#22c55e", "read": true  },
+    { "id": 4, "message": "💬 김철수 팀장이 채팅을 보냈습니다",      "time": "30분 전",  "color": "#3b82f6", "read": false }
+  ],
+
+  "calendarEvents": {
+    "2026-5-5":  ["어린이날"],
+    "2026-5-26": ["Q2 보고서 마감", "팀 회의 15:00"],
+    "2026-5-28": ["본부장 결재"],
+    "2026-5-30": ["월급날 🎉"],
+    "2026-6-1":  ["인사평가 시작"],
+    "2026-6-3":  ["시설 점검"],
+    "2026-6-10": ["창립기념일"]
+  },
+
+  "heatmap": {
+    "labels": ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월","합계"],
+    "values": [8, 12, 15, 10, 6, 18, 14, 9, 11, 7, 13, 16, 14]
+  },
+
+  "analysisData": {
+    "daily": {
+      "label": "일일 결산 (2026-05-26)",
+      "items": [
+        { "name": "완료 업무", "value": 3,  "max": 8,  "color": "#22c55e" },
+        { "name": "진행 업무", "value": 5,  "max": 8,  "color": "#3b82f6" },
+        { "name": "결재 처리", "value": 2,  "max": 5,  "color": "#fbbf24" },
+        { "name": "문서 기안", "value": 2,  "max": 8,  "color": "#a855f7" }
+      ]
+    },
+    "weekly": {
+      "label": "주간 결산 (5/20~5/26)",
+      "items": [
+        { "name": "완료",  "value": 12, "max": 20, "color": "#22c55e" },
+        { "name": "지연",  "value": 2,  "max": 20, "color": "#ef4444" },
+        { "name": "결재",  "value": 7,  "max": 10, "color": "#fbbf24" },
+        { "name": "회의",  "value": 4,  "max": 10, "color": "#a855f7" }
+      ]
+    },
+    "monthly": {
+      "label": "월간 결산 (2026년 5월)",
+      "items": [
+        { "name": "완료",    "value": 38, "max": 60,  "color": "#22c55e" },
+        { "name": "지연",    "value": 5,  "max": 60,  "color": "#ef4444" },
+        { "name": "결재완결","value": 21, "max": 30,  "color": "#3b82f6" },
+        { "name": "예산집행","value": 33, "max": 50,  "color": "#fbbf24" }
+      ]
+    },
+    "quarter": {
+      "label": "분기 결산 (Q2 2026)",
+      "items": [
+        { "name": "목표달성","value": 76, "max": 100, "color": "#22c55e" },
+        { "name": "예산소진","value": 68, "max": 100, "color": "#fbbf24" },
+        { "name": "완료건", "value": 94, "max": 150, "color": "#3b82f6" },
+        { "name": "반려건", "value": 4,  "max": 20,  "color": "#ef4444" }
+      ]
+    },
+    "annual": {
+      "label": "연간 결산 (2026년)",
+      "items": [
+        { "name": "목표달성","value": 52,  "max": 100, "color": "#22c55e" },
+        { "name": "예산소진","value": 43,  "max": 100, "color": "#fbbf24" },
+        { "name": "완료건", "value": 186, "max": 400, "color": "#3b82f6" },
+        { "name": "인원변동","value": 2,   "max": 10,  "color": "#a855f7" }
+      ]
+    }
+  },
+
+  "members": [
+    { "name": "정세연", "email": "jeong@company.kr", "role": "member", "avatar": "정", "online": true  },
+    { "name": "김철수", "email": "kim@company.kr",   "role": "leader", "avatar": "김", "online": true  },
+    { "name": "이영희", "email": "lee@company.kr",   "role": "member", "avatar": "이", "online": false },
+    { "name": "박민준", "email": "park@company.kr",  "role": "member", "avatar": "박", "online": true  },
+    { "name": "최지수", "email": "choi@company.kr",  "role": "admin",  "avatar": "최", "online": false }
+  ],
+
+  "assignments": [
+    { "member": "정세연", "task": "결재문서 관리, 예산 정산" },
+    { "member": "김철수", "task": "팀 일정 조율, 회의 운영" },
+    { "member": "이영희", "task": "공문서 작성, 대외 응대"  },
+    { "member": "박민준", "task": "시설 관리, 비품 구매"    }
+  ],
+
+  "snsChannels": [
+    { "id": 0, "name": "#총무팀 전체", "type": "channel", "avatar": "팀", "online": true,  "unread": 2 },
+    { "id": 1, "name": "김철수 팀장",  "type": "dm",      "avatar": "김", "online": true,  "unread": 1 },
+    { "id": 2, "name": "이영희",       "type": "dm",      "avatar": "이", "online": false, "unread": 0 },
+    { "id": 3, "name": "박민준",       "type": "dm",      "avatar": "박", "online": true,  "unread": 1 },
+    { "id": 4, "name": "#공지채널",    "type": "channel", "avatar": "공", "online": true,  "unread": 0 }
+  ],
+
+  "snsMessages": [
+    [
+      { "from": "김철수 팀장", "text": "안녕하세요! Q2 보고서 진행 상황 어떻게 되나요?",         "me": false, "time": "09:15" },
+      { "from": "나",          "text": "현재 75% 완료됐습니다. 오늘 오후까지 1차 완료 예정이에요.", "me": true,  "time": "09:17" },
+      { "from": "이영희",      "text": "공문서 초안 작성 완료했습니다. 검토 부탁드립니다!",        "me": false, "time": "09:30" },
+      { "from": "김철수 팀장", "text": "👍 수고하셨습니다. 오늘 오후 3시에 팀 회의 잡겠습니다.",  "me": false, "time": "09:45" },
+      { "from": "나",          "text": "네, 확인했습니다!",                                        "me": true,  "time": "09:46" }
+    ],
+    [
+      { "from": "김철수 팀장", "text": "정세연씨, 오늘 결재 서류 준비 됐나요?",           "me": false, "time": "10:00" },
+      { "from": "나",          "text": "네 팀장님, 오전 중으로 올리겠습니다.",            "me": true,  "time": "10:02" }
+    ],
+    [
+      { "from": "이영희",      "text": "안녕하세요! 공문서 양식 공유드립니다.",           "me": false, "time": "08:30" }
+    ],
+    [
+      { "from": "박민준",      "text": "사무용품 발주 내역 확인 부탁드립니다.",           "me": false, "time": "11:00" },
+      { "from": "나",          "text": "확인했습니다. 승인 요청드릴게요.",               "me": true,  "time": "11:05" }
+    ],
+    [
+      { "from": "관리자",      "text": "[공지] 6월 인사평가 일정이 안내되었습니다.",       "me": false, "time": "09:00" }
+    ]
+  ],
+
+  "notices": [
+    { "type": "긴급", "title": "5/28 본부장 결재 자료 오전 9시 제출",  "date": "5/26", "author": "관리자" },
+    { "type": "안내", "title": "6월 정기 시설 점검 6/3~4 예정",        "date": "5/25", "author": "박민준" },
+    { "type": "공지", "title": "상반기 인사평가 6/1~15 시행 안내",     "date": "5/24", "author": "김철수" }
+  ],
+
+  "sharedStickies": [
+    { "id": 1, "text": "내일 오전 회의 준비물 챙기기!", "color": "yellow", "author": "김철수" },
+    { "id": 2, "text": "법인카드 마감 이번 주 금요일",  "color": "pink",   "author": "이영희" }
+  ],
+
+  "loginLog": [
+    { "device": "Chrome · Windows", "time": "2026-05-26 09:12", "location": "서울" },
+    { "device": "Safari · iPhone",  "time": "2026-05-25 18:45", "location": "서울" }
+  ],
+
+  "weather": {
+    "location": "서울",
+    "forecast": [
+      { "day": "화(오늘)", "icon": "☀️",  "high": 28, "low": 18 },
+      { "day": "수",       "icon": "⛅",  "high": 25, "low": 17 },
+      { "day": "목",       "icon": "🌧️", "high": 21, "low": 15 },
+      { "day": "금",       "icon": "🌧️", "high": 19, "low": 14 },
+      { "day": "토",       "icon": "⛅",  "high": 23, "low": 15 },
+      { "day": "일",       "icon": "☀️",  "high": 27, "low": 16 }
+    ]
+  },
+
+  "documentTemplates": [
+    { "type": "품의서",   "icon": "📋" },
+    { "type": "회의록",   "icon": "📝" },
+    { "type": "보고서",   "icon": "📊" },
+    { "type": "출장신청", "icon": "✈️" },
+    { "type": "업무협조", "icon": "🤝" },
+    { "type": "연차신청", "icon": "🏖️" }
+  ],
+
+  "aiQuickButtons": [
+    "오늘 주요 업무 브리핑해줘",
+    "미결 결재 현황 알려줘",
+    "이번 주 일정 알려줘",
+    "연차 현황 알려줘",
+    "회의실 현황 알려줘"
+  ],
+
+  "aiResponses": {
+    "오늘 주요 업무 브리핑해줘":  "📋 오늘 주요 업무: ① Q2 보고서 마감(D-1) ② 임원회의실 예약. 현재 미완료 업무 5건입니다.",
+    "미결 결재 현황 알려줘":       "📄 미결 결재: 법인카드 정산(검토중), Q2 보고서(기안중), 강사료 품의(완결) 총 2건 처리 중입니다.",
+    "이번 주 일정 알려줘":         "📅 이번 주: 5/26 Q2 보고서 마감, 5/28 임원 보고, 5/30 월급날 🎉",
+    "연차 현황 알려줘":            "🏖️ 연차 현황: 총 25일 중 11일 잔여 (사용 14일). 상반기 내 10일 이상 사용 권장합니다.",
+    "회의실 현황 알려줘":          "🏢 A회의실: 14:00-16:00 예약 있음, B회의실: 현재 사용 가능, 임원회의실: 사전 신청 필요.",
+    "법인카드 안내해줘":           "💳 법인카드 사용 한도: 월 300만원, 영수증 제출 기한: 익월 5일. 현재 잔여 한도 ₩180만원."
+  }
+}

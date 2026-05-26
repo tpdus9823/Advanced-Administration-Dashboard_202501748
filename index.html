@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdminFlow | 행정업무 종합 대시보드 v2.1</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0e18;--bg2:#111827;--bg3:#0f172a;--bg4:#0d1117;
+  --border:#1e2d45;--border2:#2d4a6e;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;--text4:#334155;
+  --blue:#3b82f6;--blue2:#1e3a5f;--blue3:#2563eb;
+  --green:#22c55e;--green2:#4ade80;--green3:#14532d33;
+  --red:#ef4444;--red2:#f87171;--red3:#7f1d1d33;
+  --yellow:#eab308;--amber:#fbbf24;--amber3:#78350f33;
+  --purple:#a855f7;--purple2:#c084fc;
+  --cyan:#06b6d4;
+  --font:'Pretendard','Noto Sans KR','Segoe UI',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-size:11px;font-family:var(--font);overflow:hidden;height:100vh}
+
+/* ─ LOGIN OVERLAY ─ */
+#login-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(7,10,20,.97);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.login-box{background:#111827;border:1px solid #1e3a5f;border-radius:16px;padding:36px 42px;width:380px;box-shadow:0 40px 80px rgba(0,0,0,.6);text-align:center;position:relative;z-index:10000}
+.login-logo{font-size:28px;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.login-sub{color:#475569;font-size:12px;margin-bottom:24px}
+.login-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:#334155;font-size:11px}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#1e2d45}
+.btn-oauth{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:11px;border-radius:8px;border:1px solid #2d3f55;background:#0f172a;color:#e2e8f0;font-size:13px;cursor:pointer;transition:all .2s;margin-bottom:8px;font-family:var(--font)}
+.btn-oauth:hover{background:#1a2535;border-color:#3b82f6}
+.btn-oauth svg{width:18px;height:18px;flex-shrink:0}
+.login-inp{width:100%;background:#0f172a;border:1px solid #2d3f55;border-radius:8px;color:#e2e8f0;font-size:13px;padding:10px 14px;outline:none;margin-bottom:8px;font-family:var(--font)}
+.login-inp:focus{border-color:#3b82f6}
+.btn-login-main{width:100%;padding:11px;border-radius:8px;border:none;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s;font-family:var(--font)}
+.btn-login-main:hover{opacity:.9}
+.login-role{display:flex;gap:8px;margin-bottom:16px}
+.role-btn{flex:1;padding:8px;border-radius:6px;border:1px solid #2d3f55;background:#0f172a;color:#94a3b8;font-size:11px;cursor:pointer;transition:all .2s}
+.role-btn.active{border-color:#3b82f6;background:#1e3a5f33;color:#60a5fa}
+
+/* ─ TOPBAR ─ */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:4px 10px;display:flex;align-items:center;gap:8px;position:relative;z-index:50}
+.org-badge{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border-radius:5px;padding:2px 8px;font-size:10px;font-weight:800;letter-spacing:.5px}
+.top-title{color:#f1f5f9;font-size:12px;font-weight:800;flex:1}
+.top-user{display:flex;align-items:center;gap:6px;cursor:pointer;padding:3px 6px;border-radius:6px;transition:background .2s}
+.top-user:hover{background:#1a2535}
+.avatar{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.top-btn{background:#1e293b;border:1px solid #2d3f55;border-radius:5px;color:#94a3b8;font-size:9px;padding:2px 7px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.top-btn:hover{background:#2d3f55;color:#e2e8f0}
+/* ─ PAGE TABS ─ */
+.page-tab{display:flex;gap:3px;background:#070a14;border-radius:8px;padding:3px;border:1px solid #1e3a5f;box-shadow:0 0 12px rgba(37,99,235,.15)}
+.ptab{
+  padding:5px 16px;border-radius:6px;font-size:11px;color:#475569;cursor:pointer;
+  transition:all .25s;font-weight:700;letter-spacing:.3px;position:relative;
+  display:flex;align-items:center;gap:5px;white-space:nowrap
+}
+.ptab:hover{color:#93c5fd;background:#0f172a}
+.ptab.active{
+  background:linear-gradient(135deg,#1d4ed8,#7c3aed);
+  color:#fff;
+  box-shadow:0 0 16px rgba(37,99,235,.5),0 2px 8px rgba(0,0,0,.4);
+  text-shadow:0 1px 3px rgba(0,0,0,.3)
+}
+@keyframes tabPulse{0%,100%{box-shadow:0 0 16px rgba(37,99,235,.5),0 2px 8px rgba(0,0,0,.4)}50%{box-shadow:0 0 22px rgba(124,58,237,.6),0 2px 8px rgba(0,0,0,.4)}}
+.ptab.active{animation:tabPulse 2.5s ease-in-out infinite}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;position:absolute;top:-2px;right:-2px}
+.badge-cnt{background:#ef4444;color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;font-weight:700;min-width:16px;text-align:center}
+
+/* ─ KPI BAR ─ */
+.kbar{display:grid;grid-template-columns:repeat(7,1fr);background:var(--bg2);border-bottom:1px solid var(--border)}
+.ki{padding:4px 8px;border-right:1px solid var(--border);cursor:default;transition:background .2s}
+.ki:last-child{border-right:none}
+.ki:hover{background:#1a2535}
+.kl{color:#64748b;font-size:8px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:1px}
+.kv{font-size:15px;font-weight:800;color:#f1f5f9;line-height:1}
+.kb{display:inline-block;font-size:8px;border-radius:3px;padding:1px 4px;margin-top:1px}
+.up{background:#14532d33;color:#4ade80}.dn{background:#7f1d1d33;color:#f87171}.nt{background:#1e293b;color:#94a3b8}
+
+/* ─ MAIN PAGES ─ */
+.page{display:none;height:calc(100vh - 62px);overflow:hidden}
+.page.active{display:block}
+
+/* ─ GRID SYSTEM ─ */
+.dashboard-wrap{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px;padding:4px;height:100%;overflow:hidden}
+.db-quad{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.db-quad-hd{background:#0d1117;border-bottom:1px solid var(--border);padding:5px 9px;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.db-quad-title{color:#f1f5f9;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px;flex:1}
+.db-quad-body{flex:1;overflow-y:auto;padding:5px;display:grid;gap:4px;scrollbar-width:thin;scrollbar-color:#1e293b transparent}
+.db-quad-body::-webkit-scrollbar{width:3px}
+.db-quad-body::-webkit-scrollbar-thumb{background:#1e293b;border-radius:3px}
+
+/* ─ CARD ─ */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 8px;transition:border-color .2s}
+.card:hover{border-color:var(--border2)}
+.ch{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.ct{color:#94a3b8;font-size:10px;font-weight:600;display:flex;align-items:center;gap:4px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dy{background:#eab308}.dbl{background:#3b82f6}.dr{background:#ef4444}.dg{background:#22c55e}.dp{background:#a855f7}.dc{background:#06b6d4}.do{background:#f97316}
+
+/* ─ BUTTONS ─ */
+.bs, .bsp, .bsm, .bsd, .ptab, .cd, .sticky, .sns-user, .doc-tmpl, .top-user, .role-btn, button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bs{background:#1e293b;border:1px solid #2d3f55;border-radius:4px;color:#94a3b8;font-size:9px;padding:2px 6px;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:var(--font)}
+.bs:hover{background:#2d3f55;color:#e2e8f0}
+.bsp{background:#2563eb;border:none;border-radius:4px;color:#fff;font-size:10px;padding:3px 8px;cursor:pointer;transition:background .15s;font-family:var(--font)}
+.bsp:hover{background:#1d4ed8}
+.bsm{background:#7c3aed;border:none;border-radius:4px;color:#fff;font-size:10px;padding:3px 8px;cursor:pointer;transition:background .15s;font-family:var(--font)}
+.bsm:hover{background:#6d28d9}
+.bsd{background:#14532d33;border:1px solid #16a34a44;border-radius:4px;color:#4ade80;font-size:9px;padding:2px 6px;cursor:pointer;font-family:var(--font)}
+
+/* ─ INPUTS ─ */
+.inp{background:#0b0e18;border:1px solid #2d3f55;border-radius:4px;color:#e2e8f0;font-size:10px;padding:4px 7px;outline:none;width:100%;transition:border-color .15s;font-family:var(--font)}
+.inp:focus{border-color:#3b82f6}
+.sel{background:#0b0e18;border:1px solid #2d3f55;border-radius:4px;color:#94a3b8;font-size:9px;padding:2px 5px;outline:none;font-family:var(--font)}
+textarea.inp{resize:none;line-height:1.5}
+
+/* ─ TAGS ─ */
+.tag{border-radius:3px;padding:1px 5px;font-size:8px}
+.td1{background:#7f1d1d33;color:#fca5a5;border:1px solid #7f1d1d55}
+.td2{background:#78350f33;color:#fdba74;border:1px solid #78350f55}
+.td5{background:#1e3a5f33;color:#93c5fd;border:1px solid #1e3a5f55}
+.tdone{background:#14532d33;color:#86efac;border:1px solid #14532d55}
+.tbadge{border-radius:4px;padding:2px 7px;font-size:10px;font-weight:600;flex-shrink:0;white-space:nowrap}
+.bac{background:#1e3a5f33;color:#93c5fd}.bpa{background:#78350f33;color:#fdba74}
+.bdo{background:#14532d33;color:#86efac}.bre{background:#7f1d1d33;color:#fca5a5}
+.new-badge{background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:9px;border-radius:3px;padding:1px 6px;font-weight:700}
+
+/* ─ ROW ─ */
+.row{display:flex;align-items:center;gap:5px;padding:4px 6px;border-radius:4px;margin-bottom:2px;background:#0b0e18;border:1px solid var(--border);transition:border-color .15s}
+.row:hover{border-color:var(--border2)}
+.xb{color:#334155;cursor:pointer;padding:0 2px;font-size:12px;flex-shrink:0;transition:color .15s}
+.xb:hover{color:#f87171}
+
+/* ─ PROGRESS ─ */
+.pb{background:#1e293b;border-radius:3px;height:4px;overflow:hidden}
+.pf{height:100%;border-radius:3px;transition:width .5s ease}
+
+/* ─ STAT BOX ─ */
+.sb{background:#0b0e18;border-radius:5px;padding:5px;text-align:center;border:1px solid var(--border)}
+.sb-v{font-size:15px;font-weight:800;line-height:1;margin-bottom:1px}
+.sb-l{color:#475569;font-size:8px;text-transform:uppercase;letter-spacing:.3px}
+
+/* ─ TODO ─ */
+#todo-list .row input[type=checkbox]{accent-color:#3b82f6;cursor:pointer;width:13px;height:13px;flex-shrink:0}
+.todo-text{flex:1;color:#cbd5e1;cursor:pointer;font-size:11px}
+.todo-text.done-text{text-decoration:line-through;color:#334155}
+
+/* ─ CHAT AREA ─ */
+.chat-area{background:#0b0e18;border-radius:5px;padding:5px;height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;border:1px solid var(--border);margin-bottom:4px;scrollbar-width:thin;scrollbar-color:#1e293b transparent}
+.chat-area::-webkit-scrollbar{width:3px}
+.chat-area::-webkit-scrollbar-thumb{background:#1e293b}
+.msg{padding:4px 8px;border-radius:5px;font-size:10px;line-height:1.5;max-width:92%}
+.mu{background:#1e3a5f;color:#bfdbfe;align-self:flex-end;border-radius:6px 6px 2px 6px}
+.ma{background:#1a2535;color:#e2e8f0;align-self:flex-start;border:1px solid var(--border);border-radius:6px 6px 6px 2px}
+.mal{color:#60a5fa;font-size:8px;margin-bottom:1px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+@keyframes spn{to{transform:rotate(360deg)}}
+.sp2{display:inline-block;width:10px;height:10px;border:2px solid #1e2d45;border-top-color:#3b82f6;border-radius:50%;animation:spn .7s linear infinite}
+
+/* ─ SNS CHAT ─ */
+.sns-list{border-right:1px solid var(--border);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#1e293b transparent}
+.sns-user{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer;transition:background .15s;border-bottom:1px solid #0d1117}
+.sns-user:hover{background:#1a2535}
+.sns-user.active{background:#1e3a5f22;border-left:2px solid #3b82f6}
+.online-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.sns-msg-area{flex:1;display:flex;flex-direction:column;background:#0b0e18}
+.sns-msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;scrollbar-color:#1e293b transparent}
+.sns-msg-u{background:#1e3a5f;color:#bfdbfe;align-self:flex-end;padding:7px 11px;border-radius:10px 10px 2px 10px;font-size:11px;max-width:70%;line-height:1.5}
+.sns-msg-t{background:#1a2535;color:#e2e8f0;align-self:flex-start;padding:7px 11px;border-radius:10px 10px 10px 2px;font-size:11px;max-width:70%;line-height:1.5;border:1px solid var(--border)}
+.sns-from{font-size:9px;color:#60a5fa;font-weight:700;margin-bottom:2px}
+
+/* ─ CALENDAR (정통 격자형 달력 디자인) ─ */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;margin-top:6px;overflow:hidden}
+.cdn{background:var(--bg3);color:#64748b;font-size:10px;padding:6px 0;font-weight:700;text-align:center;text-transform:uppercase;letter-spacing:.3px}
+.cdn.sun{color:#f87171}
+.cdn.sat{color:#60a5fa}
+.cd{background:var(--bg2);color:#e2e8f0;font-size:10px;padding:4px;cursor:pointer;position:relative;min-height:56px;display:flex;flex-direction:column;align-items:flex-start;transition:background .2s ease;gap:2px}
+.cd:hover{background:#1e3a5f}
+.cd.today{background:#1a2535}
+.cd-num{font-size:10px;font-weight:700;margin-bottom:2px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.cd.today .cd-num{background:#3b82f6;color:#fff}
+.cd.sun:not(.today) .cd-num{color:#fca5a5}
+.cd.sat:not(.today) .cd-num{color:#93c5fd}
+.cd.past .cd-num{color:#475569}
+.cd.empty{background:var(--bg);pointer-events:none}
+.ev-wrap{display:flex;flex-direction:column;gap:1px;width:100%}
+.ev-badge{background:#7f1d1d33;color:#fca5a5;border:1px solid #7f1d1d55;font-size:8px;padding:2px 3px;border-radius:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.ev-badge.multi{background:#1e3a5f33;color:#93c5fd;border-color:#1e3a5f55}
+#cal-ev-box {background:linear-gradient(145deg, #111827, #0f172a); border:1px solid #2563eb; border-radius:8px; padding:10px; margin-top:8px; font-size:11px; box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+
+/* ─ POSTITIT ─ */
+.sticky-wrap{display:flex;flex-wrap:wrap;gap:4px;padding:2px}
+.sticky{border-radius:5px;padding:6px;font-size:10px;color:#0d1117;position:relative;min-width:76px;min-height:56px;cursor:pointer;transition:transform .2s;box-shadow:2px 3px 6px rgba(0,0,0,.4)}
+.sticky:hover{transform:rotate(-1deg) scale(1.03)}
+.sticky-del{position:absolute;top:3px;right:4px;background:rgba(0,0,0,.2);border:none;border-radius:50%;width:13px;height:13px;font-size:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#333}
+.sticky-text{font-size:9px;line-height:1.4;margin-top:3px;word-break:break-all;color:#1a1a1a}
+
+/* ─ APPROVAL PATH ─ */
+.ap-path{display:flex;align-items:flex-start;padding:4px 0;gap:0;overflow-x:auto;scrollbar-width:none}
+.ap-path::-webkit-scrollbar{display:none}
+.ap-step{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
+.ap-node{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;border:2px solid transparent;transition:all .2s}
+.ap-done{background:#14532d33;border-color:#22c55e;color:#4ade80}
+@keyframes apblink{0%,100%{border-color:#3b82f6;box-shadow:0 0 0 0 #3b82f622}50%{border-color:#93c5fd;box-shadow:0 0 0 3px #3b82f622}}
+.ap-cur{background:#1e3a5f33;border-color:#3b82f6;color:#60a5fa;animation:apblink 1.5s infinite}
+.ap-wait{background:#0f172a;border-color:#1e293b;color:#334155}
+.ap-rej{background:#7f1d1d33;border-color:#ef4444;color:#f87171}
+.ap-name{font-size:8px;color:#475569;text-align:center;max-width:30px;line-height:1.2}
+.ap-arr{color:#1e293b;font-size:13px;padding:0 1px;margin-top:6px;flex-shrink:0}
+
+/* ─ DONUT ─ */
+.donut-wrap{display:flex;align-items:center;gap:12px}
+.donut-legend{display:flex;flex-direction:column;gap:4px;flex:1}
+.dl-row{display:flex;align-items:center;gap:5px;font-size:10px}
+.dl-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* ─ HEATMAP ─ */
+.hm-grid{display:grid;grid-template-columns:repeat(13,1fr);gap:2px}
+.hm-cell{height:13px;border-radius:2px;cursor:pointer;transition:transform .1s}
+.hm-cell:hover{transform:scale(1.4)}
+
+/* ─ DOC TEMPLATE ─ */
+.doc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px}
+.doc-tmpl{background:#0b0e18;border:1px solid var(--border);border-radius:6px;padding:7px;cursor:pointer;text-align:center;transition:all .2s}
+.doc-tmpl:hover{border-color:#2563eb;background:#1e3a5f22}
+.doc-icon{font-size:14px;margin-bottom:2px}
+.doc-name{font-size:10px;color:#94a3b8}
+
+/* ─ MODAL ─ */
+.modal-bg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:8000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg.open{display:flex}
+.modal{background:#111827;border:1px solid var(--border);border-radius:12px;padding:18px;width:560px;max-width:96vw;max-height:85vh;display:flex;flex-direction:column;gap:10px;box-shadow:0 25px 60px rgba(0,0,0,.6)}
+.modal-hd{display:flex;align-items:center;justify-content:space-between}
+.modal-title{color:#f1f5f9;font-size:13px;font-weight:700}
+.modal-close{color:#475569;cursor:pointer;font-size:20px;line-height:1;transition:color .15s}
+.modal-close:hover{color:#f1f5f9}
+.modal-body{overflow-y:auto;flex:1;padding-right:4px;scrollbar-width:thin;scrollbar-color:#1e293b transparent}
+
+/* ─ SETTINGS MODAL ─ */
+.settings-section{margin-bottom:14px}
+.settings-label{color:#64748b;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #0f172a}
+.toggle{position:relative;display:inline-block;width:32px;height:17px}
+.toggle input{opacity:0;width:0;height:0}
+.slider-tog{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#334155;transition:.3s;border-radius:17px}
+.slider-tog:before{position:absolute;content:"";height:11px;width:11px;left:3px;bottom:3px;background:white;transition:.3s;border-radius:50%}
+input:checked+.slider-tog{background:#2563eb}
+input:checked+.slider-tog:before{transform:translateX(15px)}
+
+/* ─ TICKER ─ */
+.ticker-wrap{overflow:hidden;background:#0b0e18;border-radius:5px;padding:4px 8px;border:1px solid var(--border)}
+.ticker-inner{display:flex;gap:50px;animation:ticker 25s linear infinite;white-space:nowrap}
+.ticker-inner:hover{animation-play-state:paused}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ticker-item{color:#64748b;font-size:10px;display:flex;align-items:center;gap:5px;flex-shrink:0}
+
+/* ─ ANALYSIS CHART ─ */
+.chart-bar-wrap{display:flex;flex-direction:column;gap:3px}
+.chart-bar-row{display:flex;align-items:center;gap:6px;font-size:10px}
+.chart-bar-label{color:#64748b;width:28px;text-align:right;flex-shrink:0}
+.chart-bar-track{flex:1;background:#1e293b;border-radius:3px;height:14px;overflow:hidden;position:relative}
+.chart-bar-fill{height:100%;border-radius:3px;transition:width .8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:5px}
+.chart-bar-val{font-size:9px;color:rgba(255,255,255,.8);font-weight:700}
+
+/* ─ WEATHER ─ */
+.wx-item{background:#0b0e18;border:1px solid var(--border);border-radius:5px;padding:5px 3px;text-align:center;flex:1}
+.wx-icon{font-size:14px}
+.wx-day{color:#475569;font-size:9px;margin-top:1px}
+.wx-temp{color:#e2e8f0;font-size:10px;font-weight:600}
+
+/* ─ ANALYSIS TABS ─ */
+.atab-wrap{display:flex;gap:3px;margin-bottom:8px;flex-wrap:wrap}
+.atab{padding:4px 10px;border-radius:4px;font-size:10px;color:#64748b;cursor:pointer;border:1px solid #1e293b;transition:all .15s}
+.atab.active{background:#1e3a5f;color:#60a5fa;border-color:#2563eb}
+
+/* ─ MEMBER LIST ─ */
+.member-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;margin-bottom:3px;background:#0b0e18;border:1px solid var(--border)}
+.role-tag{font-size:9px;border-radius:3px;padding:1px 6px}
+.role-leader{background:#1e3a5f33;color:#93c5fd;border:1px solid #1e3a5f55}
+.role-member{background:#14532d33;color:#86efac;border:1px solid #14532d55}
+
+/* ─ NOTIFICATION TOAST ─ */
+.toast-wrap{position:fixed;top:60px;right:12px;z-index:9000;display:flex;pointer-events:none;flex-direction:column;gap:6px}
+.toast{background:#111827;border:1px solid #1e3a5f;border-radius:8px;padding:10px 14px;font-size:11px;color:#e2e8f0;max-width:260px;animation:slideIn .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.4);pointer-events:auto}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideOut{from{transform:translateX(0);opacity:1}to{transform:translateX(100%);opacity:0}}
+
+.gap4{display:flex;gap:4px}
+.gap6{display:flex;gap:6px}
+.flex1{flex:1}
+.mt4{margin-top:4px}
+.mt6{margin-top:6px}
+.f10{font-size:10px}
+.f9{font-size:9px}
+.c64{color:#64748b}
+.c94{color:#94a3b8}
+.c4a{color:#4ade80}
+.cf8{color:#f87171}
+.cfb{color:#fbbf24}
+.c93{color:#93c5fd}
+</style>
+</head>
+<body>
+
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">AdminFlow</div>
+    <div class="login-sub">행정업무 종합 대시보드 v2.1</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <div class="role-btn active" id="role-member" onclick="setRole('member')">팀원</div>
+      <div class="role-btn" id="role-leader" onclick="setRole('leader')">팀장</div>
+      <div class="role-btn" id="role-admin" onclick="setRole('admin')">관리자</div>
+    </div>
+    <button class="btn-oauth" onclick="loginGoogle()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Google 계정으로 로그인
+    </button>
+    <button class="btn-oauth" onclick="loginNaver()">
+      <svg viewBox="0 0 24 24" width="18" height="18"><rect width="24" height="24" rx="3" fill="#03C75A"/><path d="M13.53 12.27L10.26 7H7v10h3.47V11.73L13.74 17H17V7h-3.47v5.27z" fill="white"/></svg>
+      네이버 계정으로 로그인
+    </button>
+    <div class="login-divider">또는 직접 로그인</div>
+    <input class="login-inp" type="text" id="login-id" placeholder="사원번호 또는 이메일" value="jeong.seyeon@company.kr"/>
+    <input class="login-inp" type="password" id="login-pw" placeholder="비밀번호" value="••••••••"/>
+    <button class="btn-login-main" onclick="doLogin()">로그인</button>
+    <div style="color:#334155;font-size:10px;margin-top:10px">체험용: 어떤 버튼이든 클릭하면 입장됩니다</div>
+  </div>
+</div>
+
+<div class="topbar">
+  <span class="org-badge">행정</span>
+  <span class="top-title">행정업무 종합 대시보드 <span style="color:#475569;font-size:9px">v2.1</span></span>
+  <div class="ticker-wrap" style="flex:1;max-width:340px">
+    <div class="ticker-inner" id="ticker-top">
+      <span class="ticker-item"><span style="color:#ef4444">●</span> [긴급] 5/28 본부장 결재 자료 내일 오전 9시 제출</span>
+      <span class="ticker-item"><span style="color:#fbbf24">●</span> [안내] 6월 정기 시설 점검 6/3~4 예정</span>
+      <span class="ticker-item"><span style="color:#3b82f6">●</span> [공지] 상반기 인사평가 6/1~15 시행</span>
+      <span class="ticker-item"><span style="color:#22c55e">●</span> [행사] 창립기념일 6/10 오후 3시</span>
+    </div>
+  </div>
+  <div class="page-tab">
+    <div class="ptab active" onclick="showPage(1)">📋 업무 툴</div>
+    <div class="ptab" onclick="showPage(2)">💬 소통 허브</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:6px">
+    <div style="position:relative;cursor:pointer" onclick="openModal('m-notif')">
+      <span style="font-size:14px">🔔</span>
+      <span class="badge-cnt" style="position:absolute;top:-6px;right:-6px" id="notif-cnt">3</span>
+    </div>
+    <div class="top-user" onclick="openModal('m-settings')">
+      <div class="avatar" id="user-avatar">정</div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#f1f5f9" id="user-name">정세연</div>
+        <div style="font-size:9px;color:#64748b" id="user-role-lbl">팀원 · 총무팀</div>
+      </div>
+    </div>
+    <button class="top-btn" onclick="sendDailyEmail()">📧 일일결산</button>
+    <span style="color:#f1f5f9;font-weight:700;font-size:12px" id="clock">--:--:--</span>
+  </div>
+</div>
+
+<div class="kbar">
+  <div class="ki"><div class="kl">진행 업무</div><div class="kv" id="kpi-a">8</div><span class="kb nt">건</span></div>
+  <div class="ki"><div class="kl">결재 대기</div><div class="kv cfb" id="kpi-w">3</div><span class="kb dn">건</span></div>
+  <div class="ki"><div class="kl">D-1 임박</div><div class="kv cf8" id="kpi-u">2</div><span class="kb dn">마감임박</span></div>
+  <div class="ki"><div class="kl">금주 완료</div><div class="kv c4a" id="kpi-d">5</div><span class="kb up">건</span></div>
+  <div class="ki"><div class="kl">연차 잔여</div><div class="kv">11일</div><span class="kb nt">/ 25일</span></div>
+  <div class="ki"><div class="kl">예산 사용률</div><div class="kv cfb">68%</div><span class="kb dn">₩3.3M</span></div>
+  <div class="ki"><div class="kl">미읽은 채팅</div><div class="kv" style="color:#a78bfa" id="kpi-chat">4</div><span class="kb nt">건</span></div>
+</div>
+
+<div class="page active" id="page1">
+  <div class="dashboard-wrap">
+    <div class="db-quad">
+      <div class="db-quad-hd">
+        <span class="db-quad-title"><span class="dot dbl"></span>📋 업무 관리 · To-Do · 마일스톤</span>
+        <button class="bs" onclick="openModal('m-addtask')">+ 업무추가</button>
+      </div>
+      <div class="db-quad-body no-grid">
+        <div class="card">
+          <div class="ch">
+            <span class="ct"><span class="dot dbl"></span>To-Do <span style="color:#3b82f6;font-size:10px" id="todo-cnt"></span></span>
+            <div class="gap4">
+              <button class="bs" id="f-all" onclick="filterTodo('all')">전체</button>
+              <button class="bs" id="f-ac" onclick="filterTodo('active')">미완료</button>
+              <button class="bs" id="f-dn" onclick="filterTodo('done')">완료</button>
+            </div>
+          </div>
+          <div id="todo-list"></div>
+          <div class="gap4 mt4">
+            <input class="inp" id="todo-inp" placeholder="새 업무 Enter..." style="flex:1" onkeydown="if(event.key==='Enter')addTodo()"/>
+            <select class="sel" id="todo-pri"><option value="d1">D-1</option><option value="d2">D-2</option><option value="d5" selected>D-5</option></select>
+            <button class="bsp" onclick="addTodo()">추가</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dp"></span>프로젝트 마일스톤</span></div>
+          <div id="ms-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="db-quad">
+      <div class="db-quad-hd">
+        <span class="db-quad-title"><span class="dot dy"></span>📄 결재·문서·예산 현황</span>
+        <button class="bs" onclick="openModal('m-tracker')">결재등록</button>
+      </div>
+      <div class="db-quad-body no-grid">
+        <div class="card">
+          <div class="ch">
+            <span class="ct"><span class="dot dbl"></span>📍 결재 경로 추적기</span>
+            <select class="sel" id="ap-sel" onchange="renderApproval()">
+              <option value="0">법인카드 정산 신청서</option>
+              <option value="1">Q2 실적보고서 V3</option>
+              <option value="2">외부 강사료 지급품의</option>
+              <option value="3">사무용품 구매 품의</option>
+            </select>
+          </div>
+          <div class="ap-path" id="ap-path"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dy"></span>결재·문서 트래커</span></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:6px">
+            <div class="sb"><div class="sb-v c94" id="tr-d">0</div><div class="sb-l">기안중</div></div>
+            <div class="sb"><div class="sb-v cfb" id="tr-w">0</div><div class="sb-l">검토중</div></div>
+            <div class="sb"><div class="sb-v c4a" id="tr-ok">0</div><div class="sb-l">완결</div></div>
+            <div class="sb"><div class="sb-v cf8" id="tr-r">0</div><div class="sb-l">반려</div></div>
+          </div>
+          <div id="tracker-list"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dy"></span>💰 부서 예산 현황</span><span style="color:#334155;font-size:10px">2026년 5월 (D+27)</span></div>
+          <div class="donut-wrap">
+            <svg width="80" height="80" viewBox="0 0 80 80" style="flex-shrink:0">
+              <circle cx="40" cy="40" r="30" fill="none" stroke="#1e293b" stroke-width="12"/>
+              <circle id="dc1" cx="40" cy="40" r="30" fill="none" stroke="#3b82f6" stroke-width="12" stroke-dasharray="0 188" stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dasharray .8s ease"/>
+              <circle id="dc2" cx="40" cy="40" r="30" fill="none" stroke="#22c55e" stroke-width="12" stroke-dasharray="0 188" stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dasharray .8s ease .1s"/>
+              <circle id="dc3" cx="40" cy="40" r="30" fill="none" stroke="#fbbf24" stroke-width="12" stroke-dasharray="0 188" stroke-linecap="round" transform="rotate(-90 40 40)" style="transition:stroke-dasharray .8s ease .2s"/>
+              <text x="40" y="36" text-anchor="middle" fill="#f1f5f9" font-size="11" font-weight="800">68%</text>
+              <text x="40" y="46" text-anchor="middle" fill="#475569" font-size="7">사용률</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="dl-row"><span class="dl-dot" style="background:#3b82f6"></span><span class="c94 flex1">소모품</span><span class="c93">₩2.1M</span></div>
+              <div class="dl-row"><span class="dl-dot" style="background:#22c55e"></span><span class="c94 flex1">교육비</span><span class="c4a">₩0.8M</span></div>
+              <div class="dl-row"><span class="dl-dot" style="background:#fbbf24"></span><span class="c94 flex1">회식비</span><span class="cfb">₩0.4M</span></div>
+              <div class="dl-row"><span class="dl-dot" style="background:#334155"></span><span class="c94 flex1">잔여</span><span class="c64">₩1.5M</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dbl"></span>📝 빠른 문서 초안 생성기</span></div>
+          <div class="doc-grid">
+            <div class="doc-tmpl" onclick="genDoc('품의서')"><div class="doc-icon">📋</div><div class="doc-name">품의서</div></div>
+            <div class="doc-tmpl" onclick="genDoc('회의록')"><div class="doc-icon">📝</div><div class="doc-name">회의록</div></div>
+            <div class="doc-tmpl" onclick="genDoc('보고서')"><div class="doc-icon">📊</div><div class="doc-name">보고서</div></div>
+            <div class="doc-tmpl" onclick="genDoc('출장신청')"><div class="doc-icon">✈️</div><div class="doc-name">출장신청</div></div>
+            <div class="doc-tmpl" onclick="genDoc('업무협조')"><div class="doc-icon">🤝</div><div class="doc-name">업무협조</div></div>
+            <div class="doc-tmpl" onclick="genDoc('연차신청')"><div class="doc-icon">🏖️</div><div class="doc-name">연차신청</div></div>
+          </div>
+          <div id="doc-prev" style="background:#0b0e18;border:1px solid var(--border);border-radius:5px;padding:8px;font-size:10px;color:#94a3b8;line-height:1.8;display:none;max-height:100px;overflow-y:auto;white-space:pre-wrap;font-family:monospace"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="db-quad">
+      <div class="db-quad-hd">
+        <span class="db-quad-title"><span class="dot dg"></span>🤖 AI 비서 · 캘린더 · 날씨</span>
+        <span style="color:#4ade80;font-size:10px">● Claude AI 연동</span>
+      </div>
+      <div class="db-quad-body no-grid">
+        <div class="card">
+          <div class="ch"><span class="ct" style="background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700">AI 비서</span></div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:5px">
+            <span class="bs" style="cursor:pointer;color:#93c5fd" onclick="quickAsk('오늘 주요 업무 브리핑해줘')">오늘 브리핑</span>
+            <span class="bs" style="cursor:pointer;color:#93c5fd" onclick="quickAsk('미결 결재 현황 알려줘')">미결 결재</span>
+            <span class="bs" style="cursor:pointer;color:#93c5fd" onclick="quickAsk('이번 주 일정 알려줘')">이번 주 일정</span>
+            <span class="bs" style="cursor:pointer;color:#93c5fd" onclick="quickAsk('연차 현황 알려줘')">연차 현황</span>
+            <span class="bs" style="cursor:pointer;color:#93c5fd" onclick="quickAsk('회의실 현황 알려줘')">회의실</span>
+          </div>
+          <div class="chat-area" id="chat-area">
+            <div class="msg ma"><div class="mal">AI 비서 (Claude)</div>안녕하세요! 오늘(5/27 수) 주요 일정: 내일 본부장 결재 제출 마감입니다. 빠른 버튼을 누르거나 직접 질문해보세요 😊</div>
+          </div>
+          <div class="gap4">
+            <input class="inp" id="ai-inp" placeholder="AI 비서에게 질문하세요..." style="flex:1" onkeydown="if(event.key==='Enter')sendAI()"/>
+            <button class="bsp" onclick="sendAI()">전송</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <span class="ct"><span class="dot dbl"></span><span id="cal-title" style="font-size:11px;font-weight:800;color:#f1f5f9">2026년 5월</span></span>
+            <div class="gap4">
+              <button class="bs" onclick="changeMonth(-1)">◀</button>
+              <button class="bs" onclick="changeMonth(1)">▶</button>
+            </div>
+          </div>
+          <div id="cal-grid"></div>
+          <div id="cal-ev-box" style="display:none;background:#0b0e18;border:1px solid #1e3a5f;border-radius:5px;padding:6px;margin-top:4px;font-size:10px;color:#93c5fd"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dc"></span>☁️ 서울 주간 날씨</span></div>
+          <div style="display:flex;gap:3px">
+            <div class="wx-item"><div class="wx-icon">⛅</div><div class="wx-day">수(오늘)</div><div class="wx-temp">25°/17°</div></div>
+            <div class="wx-item"><div class="wx-icon">🌧️</div><div class="wx-day">목</div><div class="wx-temp">21°/15°</div></div>
+            <div class="wx-item"><div class="wx-icon">🌧️</div><div class="wx-day">금</div><div class="wx-temp">19°/14°</div></div>
+            <div class="wx-item"><div class="wx-icon">⛅</div><div class="wx-day">토</div><div class="wx-temp">23°/15°</div></div>
+            <div class="wx-item"><div class="wx-icon">☀️</div><div class="wx-day">일</div><div class="wx-temp">27°/16°</div></div>
+            <div class="wx-item"><div class="wx-icon">☀️</div><div class="wx-day">월</div><div class="wx-temp">28°/18°</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dy"></span>📌 빠른 메모</span>
+            <div class="gap4">
+              <button class="bs" onclick="saveMemo()">💾 저장</button>
+              <button class="bs" onclick="clearMemo()">🗑️ 지우기</button>
+              <span id="memo-saved" style="color:#4ade80;font-size:10px;opacity:0;transition:opacity .3s">✓ 저장됨</span>
+            </div>
+          </div>
+          <textarea class="inp" id="memo-area" rows="3" placeholder="빠른 메모를 입력하세요..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="db-quad">
+      <div class="db-quad-hd">
+        <span class="db-quad-title"><span class="dot dr"></span>📊 결산 분석 · 포스트잇 · 알림</span>
+        <div class="atab-wrap" style="margin-bottom:0">
+          <div class="atab active" onclick="switchAnalysis('daily')">일일</div>
+          <div class="atab" onclick="switchAnalysis('weekly')">주간</div>
+          <div class="atab" onclick="switchAnalysis('monthly')">월간</div>
+          <div class="atab" onclick="switchAnalysis('quarter')">분기</div>
+          <div class="atab" onclick="switchAnalysis('annual')">연간</div>
+        </div>
+      </div>
+      <div class="db-quad-body no-grid">
+        <div class="card">
+          <div id="analysis-area"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dg"></span>📅 업무 히트맵 (월별)</span></div>
+          <div style="display:grid;grid-template-columns:repeat(13,1fr);gap:1px;margin-bottom:2px;text-align:center">
+            <div style="font-size:8px;color:#334155">1월</div><div style="font-size:8px;color:#334155">2월</div><div style="font-size:8px;color:#334155">3월</div><div style="font-size:8px;color:#334155">4월</div><div style="font-size:8px;color:#334155">5월</div><div style="font-size:8px;color:#334155">6월</div><div style="font-size:8px;color:#334155">7월</div><div style="font-size:8px;color:#334155">8월</div><div style="font-size:8px;color:#334155">9월</div><div style="font-size:8px;color:#334155">10월</div><div style="font-size:8px;color:#334155">11월</div><div style="font-size:8px;color:#334155">12월</div><div style="font-size:8px;color:#334155">합계</div>
+          </div>
+          <div class="hm-grid" id="hm-grid"></div>
+          <div style="display:flex;gap:4px;align-items:center;margin-top:4px;font-size:9px;color:#334155">
+            <span>낮음</span>
+            <div style="width:10px;height:10px;border-radius:2px;background:#1e293b"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#14532d"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#16a34a"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#22c55e"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:#4ade80"></div>
+            <span>높음</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dy"></span>📌 포스트잇 메모</span>
+            <div class="gap4">
+              <button class="bs" onclick="addSticky('yellow')">🟡</button>
+              <button class="bs" onclick="addSticky('green')">🟢</button>
+              <button class="bs" onclick="addSticky('pink')">🩷</button>
+              <button class="bs" onclick="addSticky('blue')">🔵</button>
+            </div>
+          </div>
+          <div class="sticky-wrap" id="sticky-wrap"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dr"></span>🔔 알림 센터</span>
+            <button class="bs" onclick="clearAlerts()">모두읽음</button>
+          </div>
+          <div id="alert-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page" id="page2">
+  <div class="dashboard-wrap">
+    <div class="db-quad" style="grid-row:span 2">
+      <div class="db-quad-hd">
+        <span class="db-quad-title"><span class="dot dg"></span>💬 업무 채팅 (SNS)</span>
+        <div class="gap4">
+          <span style="font-size:10px;color:#4ade80">● 3 온라인</span>
+          <button class="bs" onclick="openModal('m-newchat')">+ 새채팅</button>
+        </div>
+      </div>
+      <div class="db-quad-body" style="padding:0;display:block">
+        <div class="sns-panel" style="height:100%">
+          <div class="sns-list" style="width:160px;flex-shrink:0">
+            <div style="padding:8px;font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)">채널 / DM</div>
+            <div id="sns-userlist"></div>
+          </div>
+          <div class="sns-msg-area">
+            <div style="padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">
+              <div class="avatar" style="width:24px;height:24px;font-size:10px" id="sns-chat-avatar">팀</div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#f1f5f9" id="sns-chat-name">#총무팀 전체</div>
+                <div style="font-size:9px;color:#64748b" id="sns-chat-status">채널 · 5명 참여</div>
+              </div>
+            </div>
+            <div class="sns-msgs" id="sns-msgs"></div>
+            <div style="padding:7px;border-top:1px solid var(--border);display:flex;gap:4px;flex-shrink:0">
+              <input class="inp" id="sns-inp" placeholder="메시지 입력... (Enter)" style="flex:1" onkeydown="if(event.key==='Enter')sendSNS()"/>
+              <button class="bsp" onclick="sendSNS()">전송</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="db-quad">
+      <div class="db-quad-hd">
+        <span class="db-quad-title"><span class="dot dp"></span>👥 팀원 업무 분장 · 권한 관리</span>
+        <button class="bs" onclick="openModal('m-addmember')" id="btn-addmember">+ 팀원추가</button>
+      </div>
+      <div class="db-quad-body no-grid">
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dp"></span>팀원 현황</span></div>
+          <div id="member-list"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dg"></span>업무 분장 현황</span><button class="bs" onclick="openModal('m-assign')">분장 편집</button></div>
+          <div id="assign-list"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dc"></span>🔐 로그인 관리</span></div>
+          <div style="font-size:10px;color:#64748b;margin-bottom:6px">연동된 계정</div>
+          <div class="row"><span style="font-size:14px">🔵</span><span class="flex1 f10 c94">Google OAuth</span><span class="tag" style="background:#7f1d1d33;color:#fca5a5;border:1px solid #7f1d1d55" id="oauth-status-goog">연동대기</span></div>
+          <div class="row"><span style="font-size:14px">🟢</span><span class="flex1 f10 c94">Naver OAuth</span><span class="td5 tag">미연동</span></div>
+          <div class="row"><span style="font-size:14px">🏢</span><span class="flex1 f10 c94">사내 SSO</span><span class="tdone tag">연동됨</span></div>
+          <div style="margin-top:6px;font-size:10px;color:#64748b">접속 기록</div>
+          <div id="login-log"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="db-quad">
+      <div class="db-quad-hd">
+        <span class="db-quad-title"><span class="dot dy"></span>📌 공유 포스트잇 · 공지 · 설정</span>
+        <button class="bs" onclick="openModal('m-notice')">공지 작성</button>
+      </div>
+      <div class="db-quad-body no-grid">
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dy"></span>팀 공유 포스트잇</span>
+            <div class="gap4">
+              <button class="bs" onclick="addSharedSticky('yellow')">🟡</button>
+              <button class="bs" onclick="addSharedSticky('pink')">🩷</button>
+              <button class="bs" onclick="addSharedSticky('blue')">🔵</button>
+            </div>
+          </div>
+          <div class="sticky-wrap" id="shared-sticky-wrap"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dr"></span>📢 공지사항 게시판</span></div>
+          <div id="notice-list"></div>
+        </div>
+        <div class="card">
+          <div class="ch"><span class="ct"><span class="dot dc"></span>⚙️ 대시보드 설정</span><button class="bs" onclick="openModal('m-settings')">전체 설정</button></div>
+          <div class="toggle-row"><span class="f10 c94">일일결산 자동 메일 발송</span><label class="toggle"><input type="checkbox" id="tog-email" checked><span class="slider-tog"></span></label></div>
+          <div class="toggle-row"><span class="f10 c94">업무 완료 알림 토스트</span><label class="toggle"><input type="checkbox" id="tog-toast" checked><span class="slider-tog"></span></label></div>
+          <div class="toggle-row"><span class="f10 c94">채팅 새 메시지 알림</span><label class="toggle"><input type="checkbox" id="tog-chatnotif" checked><span class="slider-tog"></span></label></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="m-notif" onclick="if(event.target===this)closeModal('m-notif')">
+<div class="modal">
+  <div class="modal-hd"><span class="modal-title">🔔 알림 센터</span><span class="modal-close" onclick="closeModal('m-notif')">✕</span></div>
+  <div class="modal-body" id="m-notif-list"></div>
+</div></div>
+
+<div class="modal-bg" id="m-tracker" onclick="if(event.target===this)closeModal('m-tracker')">
+<div class="modal">
+  <div class="modal-hd"><span class="modal-title">📄 결재·문서 트래커</span><span class="modal-close" onclick="closeModal('m-tracker')">✕</span></div>
+  <div class="modal-body" id="m-tracker-list"></div>
+  <div style="border-top:1px solid var(--border);padding-top:10px">
+    <div style="font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:6px">새 문서 등록</div>
+    <div class="gap4">
+      <input class="inp" id="m-track-inp" placeholder="문서명..." style="flex:1"/>
+      <select class="sel" id="m-track-st"><option value="bac">기안중</option><option value="bpa">검토중</option><option value="bdo">완결</option></select>
+      <button class="bsp" onclick="addTracker()">등록</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="m-addtask" onclick="if(event.target===this)closeModal('m-addtask')">
+<div class="modal">
+  <div class="modal-hd"><span class="modal-title">+ 업무 추가</span><span class="modal-close" onclick="closeModal('m-addtask')">✕</span></div>
+  <div class="modal-body">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input class="inp" id="task-name" placeholder="업무명"/>
+      <textarea class="inp" id="task-desc" placeholder="업무 설명" rows="3"></textarea>
+      <div class="gap4">
+        <select class="sel flex1" id="task-assign"><option>정세연</option><option>김철수</option><option>이영희</option><option>박민준</option></select>
+        <select class="sel" id="task-pri"><option value="d1">D-1 긴급</option><option value="d2">D-2</option><option value="d5">D-5</option></select>
+      </div>
+      <button class="bsp" onclick="addTaskFromModal()">업무 등록</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="m-addmember" onclick="if(event.target===this)closeModal('m-addmember')">
+<div class="modal">
+  <div class="modal-hd"><span class="modal-title">+ 팀원 추가</span><span class="modal-close" onclick="closeModal('m-addmember')">✕</span></div>
+  <div class="modal-body">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input class="inp" id="new-member-name" placeholder="이름"/>
+      <input class="inp" id="new-member-email" placeholder="이메일"/>
+      <select class="sel" id="new-member-role"><option value="member">팀원</option><option value="leader">팀장</option><option value="admin">관리자</option></select>
+      <button class="bsp" onclick="addMember()">추가</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="m-assign" onclick="if(event.target===this)closeModal('m-assign')">
+<div class="modal">
+  <div class="modal-hd"><span class="modal-title">업무 분장 편집</span><span class="modal-close" onclick="closeModal('m-assign')">✕</span></div>
+  <div class="modal-body">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <select class="sel" id="assign-member" style="width:100%"><option>정세연</option><option>김철수</option><option>이영희</option><option>박민준</option></select>
+      <input class="inp" id="assign-task" placeholder="담당 업무명"/>
+      <button class="bsp" onclick="addAssign()">분장 추가</button>
+    </div>
+    <div id="assign-modal-list" style="margin-top:10px"></div>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="m-notice" onclick="if(event.target===this)closeModal('m-notice')">
+<div class="modal">
+  <div class="modal-hd"><span class="modal-title">📢 공지 작성</span><span class="modal-close" onclick="closeModal('m-notice')">✕</span></div>
+  <div class="modal-body">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input class="inp" id="notice-title" placeholder="공지 제목"/>
+      <textarea class="inp" id="notice-body" placeholder="공지 내용" rows="4"></textarea>
+      <select class="sel" id="notice-type" style="width:100%"><option value="긴급">🔴 긴급</option><option value="안내" selected>🟡 안내</option><option value="공지">🔵 공지</option><option value="행사">🟢 행사</option></select>
+      <button class="bsp" onclick="postNotice()">공지 등록</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="m-settings" onclick="if(event.target===this)closeModal('m-settings')">
+<div class="modal">
+  <div class="modal-hd"><span class="modal-title">⚙️ 대시보드 설정</span><span class="modal-close" onclick="closeModal('m-settings')">✕</span></div>
+  <div class="modal-body">
+    <div class="settings-section">
+      <div class="settings-label">프로필</div>
+      <div class="gap4" style="align-items:center;margin-bottom:8px">
+        <div class="avatar" style="width:40px;height:40px;font-size:16px" id="settings-avatar">정</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#f1f5f9" id="settings-name">정세연</div>
+          <div style="font-size:11px;color:#64748b" id="settings-email">jeong.seyeon@company.kr</div>
+        </div>
+      </div>
+      <button class="top-btn" onclick="doLogout()" style="background:#7f1d1d33;color:#f87171;border-color:#7f1d1d">로그아웃</button>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">알림 설정</div>
+      <div class="toggle-row"><span class="f10 c94">일일결산 자동 메일 발송 (18:00)</span><label class="toggle"><input type="checkbox" checked><span class="slider-tog"></span></label></div>
+      <div class="toggle-row"><span class="f10 c94">마감임박 업무 푸시 알림</span><label class="toggle"><input type="checkbox" checked><span class="slider-tog"></span></label></div>
+      <div class="toggle-row"><span class="f10 c94">채팅 새 메시지 알림음</span><label class="toggle"><input type="checkbox"><span class="slider-tog"></span></label></div>
+      <div class="toggle-row"><span class="f10 c94">결재 상태 변경 알림</span><label class="toggle"><input type="checkbox" checked><span class="slider-tog"></span></label></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">연동 계정</div>
+      <div class="gap4" style="align-items:center;margin-bottom:4px"><span class="f10 c94 flex1">Google 계정</span><span class="tag" style="background:#7f1d1d33;color:#fca5a5;border:1px solid #7f1d1d55" id="settings-goog-status">연동대기</span></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">이메일 설정</div>
+      <input class="inp" id="settings-inp-email" placeholder="일일결산 수신 이메일" value="jeong.seyeon@gmail.com" style="margin-bottom:6px"/>
+      <input class="inp" placeholder="참조 이메일 (CC)"/>
+    </div>
+    <button class="btn-login-main" onclick="closeModal('m-settings');showToast('✅ 설정이 저장되었습니다')">설정 저장</button>
+  </div>
+</div></div>
+
+<div class="modal-bg" id="m-newchat" onclick="if(event.target===this)closeModal('m-newchat')">
+<div class="modal">
+  <div class="modal-hd"><span class="modal-title">+ 새 채팅 / 채널</span><span class="modal-close" onclick="closeModal('m-newchat')">✕</span></div>
+  <div class="modal-body">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input class="inp" id="new-chat-name" placeholder="채널명 또는 대화상대"/>
+      <select class="sel" style="width:100%" id="new-chat-type"><option>채널 (#)</option><option>개인 DM</option></select>
+      <button class="bsp" onclick="createChat()">생성</button>
+    </div>
+  </div>
+</div></div>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+// ══ [교수님 요구사항] SUPABASE CONFIGURATION (버그 원천 차단 로직) ══
+const SUPABASE_URL = "https://your-supabase-url.supabase.co"; 
+const SUPABASE_ANON_KEY = "your-anon-key";
+
+// 기존 코드의 치명적 참조 오류(Reference Error)를 방지하기 위해 try-catch 및 전역 변수로 분리했습니다.
+let supabaseClient = null;
+try {
+  if (SUPABASE_URL.indexOf("your-supabase") === -1 && typeof window.supabase !== 'undefined') {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (error) {
+  console.warn("Supabase 연결 중 오류 발생(무시됨):", error);
+}
+
+// ══ DATA ══
+const TODAY = new Date(2026,4,27); // May 27 2026
+let currentPage=1, currentRole='member', currentUser={name:'정세연',email:'jeong.seyeon@company.kr',avatar:'정'};
+let calYear=2026, calMonth=4;
+let todoFilter='all', trackerFilter='all', analysisMode='daily';
+let snsActiveChat=0;
+
+const todos=[
+  {id:1,text:'Q2 경영실적 보고서 최종 결재 상신',pri:'d1',done:false,assign:'정세연'},
+  {id:2,text:'5/28 임원회의실 예약 및 자료 배포',pri:'d2',done:false,assign:'김철수'},
+  {id:3,text:'사무용품 계정 점검 및 발주',pri:'d5',done:false,assign:'이영희'},
+  {id:4,text:'인사평가 일정 공지 발송',pri:'d5',done:true,assign:'정세연'},
+  {id:5,text:'6월 시설 점검 일정 조율',pri:'d5',done:false,assign:'박민준'},
+];
+const milestones=[
+  {name:'상반기 결산 보고',pct:75,color:'#3b82f6',due:'6/15'},
+  {name:'사무실 리모델링 TF',pct:40,color:'#a855f7',due:'7/31'},
+  {name:'HR 시스템 전환',pct:20,color:'#f97316',due:'9/30'},
+];
+const trackers=[
+  {id:1,name:'법인카드 정산 신청서',st:'bpa',date:'5/24'},
+  {id:2,name:'Q2 실적보고서 V3',st:'bac',date:'5/25'},
+  {id:3,name:'외부 강사료 지급품의',st:'bdo',date:'5/20'},
+  {id:4,name:'사무용품 구매 품의',st:'bre',date:'5/23'},
+  {id:5,name:'5월 법인카드 영수증',st:'bpa',date:'5/26'},
+];
+const approvals=[
+  [{n:'담당',s:'done'},{n:'팀장',s:'done'},{n:'부장',s:'cur'},{n:'본부장',s:'wait'},{n:'대표',s:'wait'}],
+  [{n:'담당',s:'done'},{n:'팀장',s:'cur'},{n:'본부장',s:'wait'},{n:'대표',s:'wait'}],
+  [{n:'담당',s:'done'},{n:'팀장',s:'done'},{n:'부장',s:'done'},{n:'본부장',s:'cur'},{n:'대표',s:'wait'}],
+  [{n:'담당',s:'done'},{n:'팀장',s:'rej'}],
+];
+const alerts=[
+  {id:1,msg:'📋 법인카드 정산 신청서 — 부장 검토 중',time:'10분 전',color:'#fbbf24',read:false},
+  {id:2,msg:'🔴 Q2 보고서 마감 D-1 임박!',time:'1시간 전',color:'#ef4444',read:false},
+  {id:3,msg:'✅ 사무용품 구매 품의 완결 처리',time:'2시간 전',color:'#22c55e',read:true},
+  {id:4,msg:'💬 김철수 팀장이 채팅을 보냈습니다',time:'30분 전',color:'#3b82f6',read:false},
+];
+const members=[
+  {name:'정세연',email:'jeong@company.kr',role:'member',avatar:'정',online:true},
+  {name:'김철수',email:'kim@company.kr',role:'leader',avatar:'김',online:true},
+  {name:'이영희',email:'lee@company.kr',role:'member',avatar:'이',online:false},
+  {name:'박민준',email:'park@company.kr',role:'member',avatar:'박',online:true},
+  {name:'최지수',email:'choi@company.kr',role:'admin',avatar:'최',online:false},
+];
+const assigns=[
+  {member:'정세연',task:'결재문서 관리, 예산 정산'},
+  {member:'김철수',task:'팀 일정 조율, 회의 운영'},
+  {member:'이영희',task:'공문서 작성, 대외 응대'},
+  {member:'박민준',task:'시설 관리, 비품 구매'},
+];
+const snsChats=[
+  {name:'#총무팀 전체',type:'channel',avatar:'팀',online:true,unread:2},
+  {name:'김철수 팀장',type:'dm',avatar:'김',online:true,unread:1},
+  {name:'이영희',type:'dm',avatar:'이',online:false,unread:0},
+  {name:'박민준',type:'dm',avatar:'박',online:true,unread:1},
+  {name:'#공지채널',type:'channel',avatar:'공',online:true,unread:0},
+];
+const snsMessages=[
+  [{from:'김철수 팀장',text:'안녕하세요! Q2 보고서 진행 상황 어떻게 되나요?',me:false,time:'09:15'},
+   {from:'나',text:'현재 75% 완료됐습니다. 오늘 오후까지 1차 완료 예정이에요.',me:true,time:'09:17'},
+   {from:'이영희',text:'공문서 초안 작성 완료했습니다. 검토 부탁드립니다!',me:false,time:'09:30'},
+   {from:'김철수 팀장',text:'👍 수고하셨습니다. 오늘 오후 3시에 팀 회의 잡겠습니다.',me:false,time:'09:45'},
+   {from:'나',text:'네, 확인했습니다!',me:true,time:'09:46'}],
+  [{from:'김철수 팀장',text:'정세연씨, 오늘 결재 서류 준비 됐나요?',me:false,time:'10:00'},
+   {from:'나',text:'네 팀장님, 오전 중으로 올리겠습니다.',me:true,time:'10:02'}],
+  [{from:'이영희',text:'안녕하세요! 공문서 양식 공유드립니다.',me:false,time:'08:30'}],
+  [{from:'박민준',text:'사무용품 발주 내역 확인 부탁드립니다.',me:false,time:'11:00'},
+   {from:'나',text:'확인했습니다. 승인 요청드릴게요.',me:true,time:'11:05'}],
+  [{from:'관리자',text:'[공지] 6월 인사평가 일정이 안내되었습니다.',me:false,time:'09:00'}],
+];
+const notices=[
+  {type:'긴급',title:'5/28 본부장 결재 자료 내일 오전 9시 제출',date:'5/27',author:'관리자'},
+  {type:'안내',title:'6월 정기 시설 점검 6/3~4 예정',date:'5/26',author:'박민준'},
+  {type:'공지',title:'상반기 인사평가 6/1~15 시행 안내',date:'5/25',author:'김철수'},
+];
+const stickies=[];
+const sharedStickies=[
+  {id:1,text:'내일 오전 회의 준비물 챙기기!',color:'yellow',author:'김철수'},
+  {id:2,text:'법인카드 마감 이번 주 금요일',color:'pink',author:'이영희'},
+];
+const loginLog=[
+  {device:'Chrome · Windows',time:'2026-05-27 09:05',loc:'서울'},
+  {device:'Safari · iPhone',time:'2026-05-26 18:45',loc:'서울'},
+];
+const calEvents={
+  '2026-5-5':['어린이날'],
+  '2026-5-27':['오늘: 팀 주간 보고','AI 비서 업데이트 v2.1'],
+  '2026-5-28':['본부장 결재','Q2 보고서 제출'],
+  '2026-5-30':['월급날 🎉'],
+  '2026-6-1':['인사평가 시작'],
+  '2026-6-3':['시설 점검'],
+  '2026-6-10':['창립기념일'],
+};
+const hmData=[8,12,15,10,6,18,14,9,11,7,13,16,14];
+const stickyColors={yellow:'#fde68a',green:'#bbf7d0',pink:'#fecdd3',blue:'#bfdbfe'};
+const analysisData={
+  daily:{label:'일일 결산 (2026-05-27)',items:[{n:'완료 업무',v:3,max:8,c:'#22c55e'},{n:'진행 업무',v:5,max:8,c:'#3b82f6'},{n:'결재 처리',v:2,max:5,c:'#fbbf24'},{n:'문서 기안',v:2,max:8,c:'#a855f7'}]},
+  weekly:{label:'주간 결산 (5/20~5/26)',items:[{n:'완료',v:12,max:20,c:'#22c55e'},{n:'지연',v:2,max:20,c:'#ef4444'},{n:'결재',v:7,max:10,c:'#fbbf24'},{n:'회의',v:4,max:10,c:'#a855f7'}]},
+  monthly:{label:'월간 결산 (2026년 5월)',items:[{n:'완료',v:38,max:60,c:'#22c55e'},{n:'지연',v:5,max:60,c:'#ef4444'},{n:'결재완결',v:21,max:30,c:'#3b82f6'},{n:'예산집행',v:33,max:50,c:'#fbbf24'}]},
+  quarter:{label:'분기 결산 (Q2 2026)',items:[{n:'목표달성',v:76,max:100,c:'#22c55e'},{n:'예산소진',v:68,max:100,c:'#fbbf24'},{n:'완료건',v:94,max:150,c:'#3b82f6'},{n:'반려건',v:4,max:20,c:'#ef4444'}]},
+  annual:{label:'연간 결산 (2026년)',items:[{n:'목표달성',v:52,max:100,c:'#22c55e'},{n:'예산소진',v:43,max:100,c:'#fbbf24'},{n:'완료건',v:186,max:400,c:'#3b82f6'},{n:'인원변동',v:2,max:10,c:'#a855f7'}]},
+};
+
+// ══ INIT ══
+async function init(){
+  updateClock();
+  setInterval(updateClock,1000);
+  
+  renderTodo();renderMilestones();renderTracker();renderApproval();renderAlerts();
+  renderCalendar();renderHeatmap();renderAnalysis();renderMembers();renderAssigns();
+  renderSNSUserList();renderSNSMessages();renderStickies();renderSharedStickies();
+  renderNotices();renderLoginLog();updateDonut();updateKPI();
+  
+  const hasAuthToken = window.location.hash && window.location.hash.includes('access_token=');
+
+  if (supabaseClient && (hasAuthToken || await checkSupabaseSession())) {
+    console.log("Supabase 세션 발견 혹은 인증 리다이렉트 처리 중...");
+  } else {
+    document.getElementById('login-overlay').style.display = 'flex';
+  }
+
+  if (supabaseClient) {
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        handleSupabaseUser(session.user, 'Google');
+      } else if (event === 'SIGNED_OUT') {
+        document.getElementById('login-overlay').style.display = 'flex';
+      }
+    });
+  }
+}
+
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString('ko-KR');
+}
+
+// ─ SUPABASE AUTH LOGIC ─
+async function checkSupabaseSession() {
+  if (!supabaseClient) return false;
+  try {
+    const { data: { session }, error } = await supabaseClient.auth.getSession();
+    if (session && session.user) {
+      handleSupabaseUser(session.user, 'Google');
+      return true;
+    }
+  } catch (e) {
+    console.error("세션 캐싱 체크 오류:", e);
+  }
+  return false;
+}
+
+function handleSupabaseUser(user, provider) {
+  const fullName = user.user_metadata.full_name || user.email.split('@')[0];
+  currentUser.name = fullName;
+  currentUser.email = user.email;
+  currentUser.avatar = fullName[0];
+
+  document.getElementById('user-name').textContent = currentUser.name;
+  document.getElementById('user-avatar').textContent = currentUser.avatar;
+  document.getElementById('settings-avatar').textContent = currentUser.avatar;
+  document.getElementById('settings-name').textContent = currentUser.name;
+  document.getElementById('settings-email').textContent = currentUser.email;
+  document.getElementById('settings-inp-email').value = currentUser.email;
+
+  const roles = {member:'팀원 · 총무팀', leader:'팀장 · 총무팀', admin:'관리자 · 시스템'};
+  document.getElementById('user-role-lbl').textContent = roles[currentRole];
+  
+  const googBadge = document.getElementById('oauth-status-goog');
+  if (googBadge) {
+    googBadge.className = "tdone tag";
+    googBadge.textContent = "연동됨";
+  }
+  const setGoogBadge = document.getElementById('settings-goog-status');
+  if (setGoogBadge) {
+    setGoogBadge.className = "tdone tag";
+    setGoogBadge.textContent = user.email;
+  }
+
+  document.getElementById('login-overlay').style.display = 'none';
+  showToast('✅ ' + currentUser.name + '님 로그인 완료 (' + provider + ')');
+}
+
+async function loginGoogle() {
+  if (!supabaseClient) {
+    showToast('🔵 [시뮬레이션] Google 로그인 중...');
+    setTimeout(() => doLoginAction('Google'), 500);
+    return;
+  }
+  
+  showToast('🔵 Google OAuth 인증 창으로 이동 중...');
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    if (error) showToast('❌ 로그인 오류: ' + error.message);
+  } catch (e) {
+    showToast('❌ 로그인 중단: ' + e.message);
+  }
+}
+
+async function doLogout() {
+  closeModal('m-settings');
+  if (supabaseClient) {
+    await supabaseClient.auth.signOut();
+  } else {
+    document.getElementById('login-overlay').style.display = 'flex';
+  }
+  showToast('🔒 로그아웃 되었습니다.');
+}
+
+// ══ LOGIN ══
+let selectedRole='member';
+function setRole(r){
+  selectedRole=r;
+  ['member','leader','admin'].forEach(x=>document.getElementById('role-'+x).classList.toggle('active',x===r));
+}
+function doLogin(){doLoginAction();}
+function loginNaver(){showToast('🟢 Naver OAuth 인증 중...');setTimeout(()=>doLoginAction('Naver'),800);}
+function doLoginAction(provider=''){
+  try {
+    currentRole=selectedRole;
+    const names={member:'정세연',leader:'김철수',admin:'최지수'};
+    const roles={member:'팀원 · 총무팀',leader:'팀장 · 총무팀',admin:'관리자 · 시스템'};
+    currentUser.name=names[currentRole];
+    currentUser.avatar=names[currentRole][0];
+    document.getElementById('user-name').textContent=currentUser.name;
+    document.getElementById('user-role-lbl').textContent=roles[currentRole];
+    document.getElementById('user-avatar').textContent=currentUser.avatar;
+    document.getElementById('settings-avatar').textContent=currentUser.avatar;
+    document.getElementById('settings-name').textContent=currentUser.name;
+    
+    if(currentRole==='leader'||currentRole==='admin'){document.getElementById('btn-addmember').style.display='flex';}
+    else{document.getElementById('btn-addmember').style.display='none';}
+    document.getElementById('login-overlay').style.display='none';
+    showToast('✅ '+currentUser.name+'님 로그인 완료'+(provider?' ('+provider+')':''));
+  } catch (err) {
+    console.error("로그인 UI 업데이트 중 오류:", err);
+  }
+}
+
+// ══ PAGE ══
+function showPage(n){
+  currentPage=n;
+  document.querySelectorAll('.page').forEach((p,i)=>p.classList.toggle('active',i===n-1));
+  document.querySelectorAll('.ptab').forEach((t,i)=>t.classList.toggle('active',i===n-1));
+}
+
+// ══ TODO ══
+let todoIdSeq=todos.length+1;
+function filterTodo(f){todoFilter=f;renderTodo();}
+function renderTodo(){
+  const list=document.getElementById('todo-list');
+  const filtered=todoFilter==='all'?todos:todoFilter==='active'?todos.filter(t=>!t.done):todos.filter(t=>t.done);
+  list.innerHTML=filtered.slice(0,5).map(t=>`
+    <div class="row">
+      <input type="checkbox" ${t.done?'checked':''} onchange="toggleTodo(${t.id})" style="accent-color:#3b82f6;cursor:pointer;width:13px;height:13px;flex-shrink:0"/>
+      <span class="flex1 f10" style="${t.done?'text-decoration:line-through;color:#334155':'color:#cbd5e1'}">${t.text}</span>
+      <span class="tag ${t.pri==='d1'?'td1':t.pri==='d2'?'td2':'td5'}">${t.pri.toUpperCase()}</span>
+      <span class="xb" onclick="deleteTodo(${t.id})">✕</span>
+    </div>`).join('');
+  document.getElementById('todo-cnt').textContent=`(${todos.filter(x=>!x.done).length}/${todos.length})`;
+  updateKPI();
+}
+function toggleTodo(id){const t=todos.find(x=>x.id===id);if(t){t.done=!t.done;renderTodo();if(t.done&&document.getElementById('tog-toast').checked)showToast('✅ 업무 완료: '+t.text.slice(0,20)+'...');}}
+function deleteTodo(id){const i=todos.findIndex(x=>x.id===id);if(i>-1)todos.splice(i,1);renderTodo();}
+function addTodo(){
+  const inp=document.getElementById('todo-inp');const pri=document.getElementById('todo-pri').value;
+  if(!inp.value.trim())return;
+  todos.unshift({id:todoIdSeq++,text:inp.value.trim(),pri,done:false,assign:currentUser.name});
+  inp.value='';renderTodo();
+}
+function addTaskFromModal(){
+  const name=document.getElementById('task-name').value.trim();
+  const pri=document.getElementById('task-pri').value;
+  if(!name)return;
+  todos.unshift({id:todoIdSeq++,text:name,pri,done:false,assign:document.getElementById('task-assign').value});
+  document.getElementById('task-name').value='';
+  closeModal('m-addtask');renderTodo();showToast('✅ 업무 등록 완료');
+}
+function updateKPI(){
+  document.getElementById('kpi-a').textContent=todos.filter(t=>!t.done).length;
+  document.getElementById('kpi-w').textContent=trackers.filter(t=>t.st==='bpa').length;
+  document.getElementById('kpi-u').textContent=todos.filter(t=>!t.done&&t.pri==='d1').length;
+  document.getElementById('kpi-d').textContent=todos.filter(t=>t.done).length;
+  const unread=alerts.filter(a=>!a.read).length;
+  document.getElementById('notif-cnt').textContent=unread;
+}
+
+// ══ MILESTONES ══
+function renderMilestones(){
+  document.getElementById('ms-list').innerHTML=milestones.map(m=>`
+    <div class="row" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="display:flex;justify-content:space-between">
+        <span class="f10" style="color:#cbd5e1">${m.name}</span>
+        <span class="f9 c64">마감 ${m.due}</span>
+      </div>
+      <div class="pb"><div class="pf" style="width:${m.pct}%;background:${m.color}"></div></div>
+      <div style="text-align:right;font-size:9px;color:${m.color}">${m.pct}%</div>
+    </div>`).join('');
+}
+
+// ══ TRACKER ══
+let trackerIdSeq=trackers.length+1;
+function renderTracker(){
+  const stCls={bac:'bac',bpa:'bpa',bdo:'bdo',bre:'bre'};
+  const stLbl={bac:'기안중',bpa:'검토중',bdo:'완결',bre:'반려'};
+  document.getElementById('tracker-list').innerHTML=trackers.slice(0,4).map(t=>`
+    <div class="row"><span class="flex1 f10 c94">${t.name}</span><span class="f9 c64">${t.date}</span><span class="tbadge ${stCls[t.st]}">${stLbl[t.st]}</span></div>`).join('');
+  document.getElementById('tr-d').textContent=trackers.filter(t=>t.st==='bac').length;
+  document.getElementById('tr-w').textContent=trackers.filter(t=>t.st==='bpa').length;
+  document.getElementById('tr-ok').textContent=trackers.filter(t=>t.st==='bdo').length;
+  document.getElementById('tr-r').textContent=trackers.filter(t=>t.st==='bre').length;
+  const ml=document.getElementById('m-tracker-list');
+  if(ml)ml.innerHTML=trackers.map(t=>`<div class="row"><span class="flex1 f10 c94">${t.name}</span><span class="f9 c64">${t.date}</span><span class="tbadge ${stCls[t.st]}">${stLbl[t.st]}</span></div>`).join('');
+}
+function addTracker(){
+  const n=document.getElementById('m-track-inp').value.trim();
+  const st=document.getElementById('m-track-st').value;
+  if(!n)return;
+  trackers.unshift({id:trackerIdSeq++,name:n,st,date:(new Date()).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'})});
+  document.getElementById('m-track-inp').value='';
+  renderTracker();showToast('📄 문서 등록 완료');
+}
+
+// ══ APPROVAL ══
+function renderApproval(){
+  const idx=parseInt(document.getElementById('ap-sel').value);
+  const steps=approvals[idx];
+  document.getElementById('ap-path').innerHTML=steps.map((s,i)=>`
+    <div class="ap-step">
+      <div class="ap-node ap-${s.s}">${s.n}</div>
+      <div class="ap-name">${s.n}</div>
+    </div>${i<steps.length-1?'<div class="ap-arr">→</div>':''}`).join('');
+}
+
+// ══ ALERTS ══
+function renderAlerts(){
+  const list=document.getElementById('alert-list');
+  if(list)list.innerHTML=alerts.slice(0,4).map(a=>`
+    <div class="row" style="${a.read?'opacity:.5':''}">
+      <span style="width:7px;height:7px;border-radius:50%;background:${a.color};flex-shrink:0"></span>
+      <span class="flex1 f10 c94">${a.msg}</span>
+      <span class="f9 c64">${a.time}</span>
+    </div>`).join('');
+  const ml=document.getElementById('m-notif-list');
+  if(ml)ml.innerHTML=alerts.map(a=>`<div class="row" style="${a.read?'opacity:.5':''}"><span style="width:7px;height:7px;border-radius:50%;background:${a.color};flex-shrink:0"></span><span class="flex1 f10 c94">${a.msg}</span><span class="f9 c64">${a.time}</span></div>`).join('');
+  updateKPI();
+}
+function clearAlerts(){alerts.forEach(a=>a.read=true);renderAlerts();showToast('🔕 알림을 모두 읽음 처리했습니다');}
+
+// ══ CALENDAR (그리드형 로직) ══
+function renderCalendar(){
+  document.getElementById('cal-title').innerHTML=`${calYear}년 ${calMonth+1}월`;
+  const days=['일','월','화','수','목','금','토'];
+  const first=new Date(calYear,calMonth,1).getDay();
+  const last=new Date(calYear,calMonth+1,0).getDate();
+  
+  let html='<div class="cal-grid">';
+  html+=days.map((d,i)=>`<div class="cdn ${i===0?'sun':i===6?'sat':''}">${d}</div>`).join('');
+  
+  for(let i=0;i<first;i++)html+=`<div class="cd empty"></div>`;
+  
+  const todayKey=`${TODAY.getFullYear()}-${TODAY.getMonth()+1}-${TODAY.getDate()}`;
+  
+  for(let d=1;d<=last;d++){
+    const key=`${calYear}-${calMonth+1}-${d}`;
+    const isToday=key===todayKey;
+    const past=new Date(calYear,calMonth,d) < TODAY && !isToday; 
+    
+    const dayOfWeek = (first + d - 1) % 7;
+    let extraCls = '';
+    
+    if(isToday) extraCls += ' today';
+    else if(past) extraCls += ' past';
+    
+    if(!isToday && !past) {
+      if(dayOfWeek===0) extraCls += ' sun';
+      if(dayOfWeek===6) extraCls += ' sat';
+    }
+    
+    let evHtml = '';
+    if(calEvents[key]){
+      evHtml = calEvents[key].slice(0, 2).map((e, idx) => `<div class="ev-badge ${idx>0?'multi':''}">${e}</div>`).join('');
+      if(calEvents[key].length > 2) evHtml += `<div style="font-size:7px;color:#94a3b8;margin-top:1px;padding-left:2px">+${calEvents[key].length-2}</div>`;
+    }
+    
+    html+=`<div class="cd${extraCls}" onclick="selectDay(${d})">
+      <div class="cd-num">${d}</div>
+      <div class="ev-wrap">${evHtml}</div>
+    </div>`;
+  }
+  
+  // 빈 칸 채워서 그리드 완성
+  const totalCells = first + last;
+  const totalRows = Math.ceil(totalCells / 7);
+  const endEmpty = (totalRows * 7) - totalCells;
+  for(let i=0;i<endEmpty;i++)html+=`<div class="cd empty"></div>`;
+  
+  html+='</div>';
+  document.getElementById('cal-grid').innerHTML=html;
+}
+function changeMonth(d){calMonth+=d;if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
+function selectDay(d){
+  const key=`${calYear}-${calMonth+1}-${d}`;
+  const evBox=document.getElementById('cal-ev-box');
+  if(calEvents[key]){
+    evBox.innerHTML=`<div style="color:#60a5fa;font-size:11px;font-weight:700;margin-bottom:6px">${calYear}/${calMonth+1}/${d} 일정</div>`+
+    calEvents[key].map(e=>`<div style="color:#e2e8f0;font-size:10px;padding:3px 0;display:flex;align-items:center;gap:4px"><span style="color:#ef4444">●</span> ${e}</div>`).join('');
+    evBox.style.display='block';
+  }
+  else{evBox.style.display='none';}
+}
+
+// ══ HEATMAP ══
+function renderHeatmap(){
+  const levels=['#1e293b','#14532d','#166534','#16a34a','#4ade80'];
+  document.getElementById('hm-grid').innerHTML=hmData.map((v,i)=>{
+    const lv=v<5?0:v<10?1:v<14?2:v<17?3:4;
+    return`<div class="hm-cell" style="background:${levels[lv]}" title="${i+1}월: ${v}건"></div>`;
+  }).join('');
+}
+
+// ══ ANALYSIS ══
+function switchAnalysis(mode){
+  analysisMode=mode;
+  document.querySelectorAll('.atab').forEach((t,i)=>{
+    const modes=['daily','weekly','monthly','quarter','annual'];
+    t.classList.toggle('active',modes[i]===mode);
+  });
+  renderAnalysis();
+}
+function renderAnalysis(){
+  const d=analysisData[analysisMode];
+  const area=document.getElementById('analysis-area');
+  area.innerHTML=`<div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:8px">${d.label}</div>`+
+    d.items.map(item=>`
+      <div style="margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin-bottom:2px"><span>${item.n}</span><span style="color:${item.c};font-weight:700">${item.v}</span></div>
+        <div class="pb"><div class="pf" style="width:${Math.round(item.v/item.max*100)}%;background:${item.c}"></div></div>
+      </div>`).join('');
+}
+
+// ══ DONUT ══
+function updateDonut(){
+  const circ=188;
+  const data=[{pct:.44,el:'dc1',offset:0},{pct:.17,el:'dc2',offset:0},{pct:.085,el:'dc3',offset:0}];
+  let cum=0;
+  data.forEach(d=>{
+    const el=document.getElementById(d.el);
+    if(!el)return;
+    const dashLen=circ*d.pct;
+    const dashOffset=circ*cum;
+    el.style.strokeDasharray=`${dashLen} ${circ-dashLen}`;
+    el.style.strokeDashoffset=-dashOffset;
+    cum+=d.pct;
+  });
+}
+
+// ══ AI CHAT (Claude API 연동) ══
+const AI_SYSTEM_PROMPT = `당신은 총무팀 행정업무 전담 AI 비서입니다. 
+현재 사용자는 ${currentUser?.name || '정세연'} (총무팀)입니다.
+현재 날짜: 2026년 5월 27일(수)
+업무 현황 요약:
+- 진행 중인 업무: 미완료 To-Do 다수
+- 결재 대기: 법인카드 정산, Q2 보고서 등
+- 중요 일정: 5/28 본부장 결재 제출, 5/30 월급날, 6/1 인사평가 시작
+- 연차 잔여: 11일 / 25일
+- 예산 사용률: 68% (₩3.3M)
+- 회의실: A·B회의실, 임원회의실 운용 중
+
+짧고 실용적으로, 이모지를 활용해서 친근하고 업무에 도움이 되게 답변해주세요. 한국어로만 답변합니다.`;
+
+async function sendAI(){
+  const inp=document.getElementById('ai-inp');
+  const q=inp.value.trim();if(!q)return;
+  addChatMsg(q,true);inp.value='';
+  const area=document.getElementById('chat-area');
+  const spin=document.createElement('div');
+  spin.className='msg ma';
+  spin.style.cssText='align-self:flex-start;padding:8px 10px';
+  spin.innerHTML='<div class="mal">AI 비서</div><span class="sp2"></span> 생각 중...';
+  area.appendChild(spin);area.scrollTop=area.scrollHeight;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: AI_SYSTEM_PROMPT,
+        messages: [{ role: "user", content: q }]
+      })
+    });
+    const data = await response.json();
+    area.removeChild(spin);
+    const ans = data?.content?.[0]?.text || '🤖 응답을 받지 못했습니다. 잠시 후 다시 시도해주세요.';
+    addChatMsg(ans, false);
+  } catch(e) {
+    area.removeChild(spin);
+    addChatMsg('🤖 현재 업무 기준으로 분석 중입니다. 진행 업무 '+todos.filter(t=>!t.done).length+'건, 결재 대기 '+trackers.filter(t=>t.st==="bpa").length+'건이 있습니다.', false);
+  }
+}
+function quickAsk(q){document.getElementById('ai-inp').value=q;sendAI();}
+function addChatMsg(txt,isUser){
+  const area=document.getElementById('chat-area');
+  const div=document.createElement('div');
+  div.className='msg '+(isUser?'mu':'ma');
+  div.innerHTML=(isUser?'':`<div class="mal">AI 비서 (Claude)</div>`)+txt;
+  area.appendChild(div);area.scrollTop=area.scrollHeight;
+}
+
+// ══ MEMO ══
+function saveMemo(){localStorage&&localStorage.setItem('adminmemo',document.getElementById('memo-area').value);const s=document.getElementById('memo-saved');s.style.opacity='1';setTimeout(()=>s.style.opacity='0',2000);}
+function clearMemo(){document.getElementById('memo-area').value='';localStorage&&localStorage.removeItem('adminmemo');}
+
+// ══ STICKIES ══
+let stickyIdSeq=10;
+function addSticky(color){
+  const txt=prompt('포스트잇 내용을 입력하세요:');
+  if(!txt)return;
+  stickies.push({id:stickyIdSeq++,text:txt,color});
+  renderStickies();
+}
+function renderStickies(){
+  document.getElementById('sticky-wrap').innerHTML=stickies.map(s=>`
+    <div class="sticky" style="background:${stickyColors[s.color]}" title="${s.text}">
+      <button class="sticky-del" onclick="deleteSticky(${s.id})">✕</button>
+      <div class="sticky-text">${s.text.slice(0,50)}</div>
+    </div>`).join('');
+}
+function deleteSticky(id){const i=stickies.findIndex(s=>s.id===id);if(i>-1)stickies.splice(i,1);renderStickies();}
+
+let sharedIdSeq=100;
+function addSharedSticky(color){
+  const txt=prompt('공유 포스트잇 내용:');
+  if(!txt)return;
+  sharedStickies.push({id:sharedIdSeq++,text:txt,color,author:currentUser.name});
+  renderSharedStickies();showToast('📌 팀 공유 포스트잇 추가');
+}
+function renderSharedStickies(){
+  document.getElementById('shared-sticky-wrap').innerHTML=sharedStickies.map(s=>`
+    <div class="sticky" style="background:${stickyColors[s.color]}">
+      <button class="sticky-del" onclick="deleteSharedSticky(${s.id})">✕</button>
+      <div style="font-size:8px;color:#555;margin-bottom:2px">${s.author}</div>
+      <div class="sticky-text">${s.text.slice(0,40)}</div>
+    </div>`).join('');
+}
+function deleteSharedSticky(id){const i=sharedStickies.findIndex(s=>s.id===id);if(i>-1)sharedStickies.splice(i,1);renderSharedStickies();}
+
+// ══ SNS CHAT ══
+function renderSNSUserList(){
+  document.getElementById('sns-userlist').innerHTML=snsChats.map((c,i)=>`
+    <div class="sns-user${i===snsActiveChat?' active':''}" onclick="selectSNSChat(${i})">
+      <div class="avatar" style="width:24px;height:24px;font-size:10px;flex-shrink:0">${c.avatar}</div>
+      <div style="flex:1;overflow:hidden">
+        <div style="font-size:10px;font-weight:600;color:#e2e8f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.name}</div>
+        <div style="font-size:9px;color:#64748b">${c.type==='channel'?'채널':'DM'}</div>
+      </div>
+      ${c.unread?`<span class="badge-cnt">${c.unread}</span>`:''}
+    </div>`).join('');
+}
+function selectSNSChat(i){
+  snsActiveChat=i;
+  snsChats[i].unread=0;
+  const c=snsChats[i];
+  document.getElementById('sns-chat-avatar').textContent=c.avatar;
+  document.getElementById('sns-chat-name').textContent=c.name;
+  document.getElementById('sns-chat-status').textContent=c.type==='channel'?'채널 · '+Math.floor(Math.random()*4+2)+'명 참여':c.online?'● 온라인':'○ 오프라인';
+  renderSNSMessages();renderSNSUserList();
+  let total=snsChats.reduce((a,x)=>a+x.unread,0);
+  document.getElementById('kpi-chat').textContent=total;
+}
+function renderSNSMessages(){
+  const msgs=snsMessages[snsActiveChat]||[];
+  document.getElementById('sns-msgs').innerHTML=msgs.map(m=>`
+    <div class="${m.me?'sns-msg-u':'sns-msg-t'}">
+      ${!m.me?`<div class="sns-from">${m.from}</div>`:''}
+      ${m.text}
+      <div style="font-size:8px;opacity:.5;margin-top:2px;text-align:${m.me?'right':'left'}">${m.time}</div>
+    </div>`).join('');
+  const msgs2=document.getElementById('sns-msgs');msgs2.scrollTop=msgs2.scrollHeight;
+}
+function sendSNS(){
+  const inp=document.getElementById('sns-inp');const txt=inp.value.trim();if(!txt)return;
+  if(!snsMessages[snsActiveChat])snsMessages[snsActiveChat]=[];
+  snsMessages[snsActiveChat].push({from:'나',text:txt,me:true,time:new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})});
+  inp.value='';renderSNSMessages();
+  setTimeout(()=>{
+    const replies=['알겠습니다!','확인했습니다 👍','수고하세요!','네, 바로 처리하겠습니다.','감사합니다!'];
+    const r=replies[Math.floor(Math.random()*replies.length)];
+    const c=snsChats[snsActiveChat];
+    snsMessages[snsActiveChat].push({from:c.name,text:r,me:false,time:new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})});
+    renderSNSMessages();
+    if(document.getElementById('tog-chatnotif').checked)showToast('💬 새 메시지: '+r.slice(0,20));
+  },1200);
+}
+function createChat(){
+  const name=document.getElementById('new-chat-name').value.trim();
+  if(!name)return;
+  snsChats.push({name,type:'channel',avatar:name[0],online:true,unread:0});
+  snsMessages.push([{from:'시스템',text:`${name} 채널이 생성되었습니다.`,me:false,time:new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}]);
+  closeModal('m-newchat');renderSNSUserList();showToast('💬 채팅방 생성: '+name);
+}
+
+// ══ MEMBERS ══
+function renderMembers(){
+  const roleLbl={member:'팀원',leader:'팀장',admin:'관리자'};
+  const roleCls={member:'role-member',leader:'role-leader',admin:'role-tag'};
+  document.getElementById('member-list').innerHTML=members.map(m=>`
+    <div class="member-row">
+      <div class="avatar" style="width:26px;height:26px;font-size:11px;flex-shrink:0">${m.avatar}</div>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:600;color:#e2e8f0">${m.name}</div>
+        <div style="font-size:9px;color:#64748b">${m.email}</div>
+      </div>
+      <div class="online-dot" style="background:${m.online?'#22c55e':'#334155'}"></div>
+      <span class="role-tag ${roleCls[m.role]}">${roleLbl[m.role]}</span>
+    </div>`).join('');
+}
+function addMember(){
+  const name=document.getElementById('new-member-name').value.trim();
+  const email=document.getElementById('new-member-email').value.trim();
+  const role=document.getElementById('new-member-role').value;
+  if(!name||!email)return;
+  members.push({name,email,role,avatar:name[0],online:false});
+  document.getElementById('new-member-name').value='';document.getElementById('new-member-email').value='';
+  closeModal('m-addmember');renderMembers();showToast('👤 팀원 추가: '+name);
+}
+
+// ══ ASSIGNS ══
+function renderAssigns(){
+  document.getElementById('assign-list').innerHTML=assigns.map(a=>`
+    <div class="row"><span class="f10" style="color:#93c5fd;min-width:44px;flex-shrink:0">${a.member}</span><span class="flex1 f10 c94">${a.task}</span></div>`).join('');
+  const ml=document.getElementById('assign-modal-list');
+  if(ml)ml.innerHTML=assigns.map(a=>`<div class="row"><span class="f10" style="color:#93c5fd;min-width:44px">${a.member}</span><span class="flex1 f10 c94">${a.task}</span><span class="xb" onclick="deleteAssign('${a.member}')">✕</span></div>`).join('');
+}
+function addAssign(){
+  const member=document.getElementById('assign-member').value;
+  const task=document.getElementById('assign-task').value.trim();
+  if(!task)return;
+  const existing=assigns.find(a=>a.member===member);
+  if(existing)existing.task=task;else assigns.push({member,task});
+  document.getElementById('assign-task').value='';renderAssigns();showToast('✅ 업무 분장 업데이트');
+}
+function deleteAssign(member){const i=assigns.findIndex(a=>a.member===member);if(i>-1)assigns.splice(i,1);renderAssigns();}
+
+// ══ NOTICES ══
+const noticeColors={긴급:'#ef4444',안내:'#fbbf24',공지:'#3b82f6',행사:'#22c55e'};
+function renderNotices(){
+  document.getElementById('notice-list').innerHTML=notices.map(n=>`
+    <div class="row">
+      <span style="width:6px;height:6px;border-radius:50%;background:${noticeColors[n.type]};flex-shrink:0"></span>
+      <div style="flex:1">
+        <div style="font-size:10px;color:#e2e8f0">[${n.type}] ${n.title}</div>
+        <div style="font-size:9px;color:#64748b">${n.date} · ${n.author}</div>
+      </div>
+    </div>`).join('');
+}
+function postNotice(){
+  const title=document.getElementById('notice-title').value.trim();
+  const type=document.getElementById('notice-type').value;
+  if(!title)return;
+  notices.unshift({type,title,date:(new Date()).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}),author:currentUser.name});
+  document.getElementById('notice-title').value='';document.getElementById('notice-body').value='';
+  closeModal('m-notice');renderNotices();showToast('📢 공지 등록 완료');
+}
+
+// ══ LOGIN LOG ══
+function renderLoginLog(){
+  document.getElementById('login-log').innerHTML=loginLog.map(l=>`
+    <div class="row"><span class="flex1 f10 c94">${l.device}</span><span class="f9 c64">${l.loc}</span><span class="f9 c64">${l.time.split(' ')[1]}</span></div>`).join('');
+}
+
+// ══ DOC TEMPLATES ══
+const templates={
+  '품의서':`품 의 서\n━━━━━━━━━━━━━━━━━━━━\n제 목: [제목 입력]\n기안일: ${TODAY.toLocaleDateString('ko-KR')}\n기안자: 정세연 / 총무팀\n━━━━━━━━━━━━━━━━━━━━\n1. 목적\n   [목적을 기술하세요]\n\n2. 주요 내용\n   [내용을 기술하세요]\n\n3. 소요 예산\n   금 액: ₩___________\n   지급처: ___________\n━━━━━━━━━━━━━━━━━━━━\n결재: 팀장 □ | 부장 □ | 본부장 □`,
+  '회의록':`회  의  록\n━━━━━━━━━━━━━━━━━━━━\n일 시: ${TODAY.toLocaleDateString('ko-KR')} ___:___ ~ ___:___\n장 소: ________───\n참석자: ________───\n━━━━━━━━━━━━━━━━━━━━\n【안건 및 논의 사항】\n1. \n\n2. \n\n【결정 사항】\n-\n\n【차기 일정】\n-  `,
+  '보고서':`보  고  서\n━━━━━━━━━━━━━━━━━━━━\n제 목: [보고서 제목]\n보고일: ${TODAY.toLocaleDateString('ko-KR')}\n보고자: 정세연\n━━━━━━━━━━━━━━━━━━━━\nⅠ. 개요\n\nⅡ. 주요 내용\n\nⅢ. 결과 및 현황\n\nⅣ. 향후 계획\n\nⅤ. 건의 사항`,
+  '출장신청':`출 장 신 청 서\n━━━━━━━━━━━━━━━━━━━━\n신청자: 정세연 / 총무팀\n출장지: ________───\n출장 기간: ___ ~ ___\n출장 목적: ________───\n━━━━━━━━━━━━━━━━━━━━\n교통비: ₩_______\n숙박비: ₩_______\n기 타: ₩_______\n합 계: ₩_______`,
+  '업무협조':`업 무 협 조 요 청\n━━━━━━━━━━━━━━━━━━━━\n수 신: ________───\n발 신: 정세연 / 총무팀\n일 자: ${TODAY.toLocaleDateString('ko-KR')}\n━━━━━━━━━━━━━━━━━━━━\n제 목: [협조 요청 제목]\n\n【요청 내용】\n\n\n【협조 기한】\n___년 ___월 ___일 까지`,
+  '연차신청':`연 차 신 청 서\n━━━━━━━━━━━━━━━━━━━━\n신청자: 정세연 / 총무팀\n신청일: ${TODAY.toLocaleDateString('ko-KR')}\n━━━━━━━━━━━━━━━━━━━━\n연차 기간: ___ ~ ___\n연차 일수: ___ 일\n잔여 연차: 11 일 / 25 일\n사유: ________───\n━━━━━━━━━━━━━━━━━━━━\n결재: 팀장 □ | 부장 □`
+};
+function genDoc(type){
+  const prev=document.getElementById('doc-prev');
+  prev.textContent=templates[type]||'템플릿 없음';
+  prev.style.display='block';
+  showToast('📝 '+type+' 초안 생성 완료');
+}
+
+// ══ EMAIL (일일결산) ══
+function sendDailyEmail(){
+  showToast('📧 일일결산 이메일 발송 중...');
+  setTimeout(()=>{
+    const completed=todos.filter(t=>t.done).length;
+    const pending=todos.filter(t=>!t.done).length;
+    const urgent=todos.filter(t=>!t.done&&t.pri==='d1').length;
+    const subject=`[일일결산] ${TODAY.toLocaleDateString('ko-KR')} 총무팀 업무 현황`;
+    const body=`총무팀 일일결산 보고\n\n완료 업무: ${completed}건\n진행 업무: ${pending}건\n긴급 업무: ${urgent}건\n결재 대기: ${trackers.filter(t=>t.st==='bpa').length}건\n\n– 발신: ${currentUser.name} (${currentUser.email})`;
+    showToast(`✅ 일일결산 발송 완료!\n${subject}`);
+    console.log('EMAIL SENT\nTo: ' + currentUser.email + '\nSubject: '+subject+'\nBody:\n'+body);
+  },1200);
+}
+
+// ══ MODAL ══
+function openModal(id){document.getElementById(id).classList.add('open');if(id==='m-tracker')renderTracker();if(id==='m-notif')renderAlerts();}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+// ══ TOAST ══
+function showToast(msg){
+  const wrap=document.getElementById('toast-wrap');
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  wrap.appendChild(t);
+  setTimeout(()=>{t.style.animation='slideOut .3s ease forwards';setTimeout(()=>wrap.removeChild(t),300);},3000);
+}
+
+// ══ BOOT (이벤트 리스너 오류 대비 즉시 실행 추가) ══
+window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('load', init);
+
+setTimeout(()=>{
+  const circ=188;
+  const segs=[{el:'dc1',pct:.44,color:'#3b82f6'},{el:'dc2',pct:.17,color:'#22c55e'},{el:'dc3',pct:.085,color:'#fbbf24'}];
+  let cum=0;
+  segs.forEach(s=>{
+    const el=document.getElementById(s.el);if(!el)return;
+    const dl=circ*s.pct;
+    el.style.strokeDasharray=`${dl} ${circ-dl}`;
+    el.style.strokeDashoffset=String(-(circ*cum));
+    cum+=s.pct;
+  });
+},500);
+</script>
+</body>
+</html>
